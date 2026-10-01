@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.2`
+**Preview version:** `0.1.0-alpha.3`
 **Status:** Portable runtime and bridge checks pass; gravity/movement changes await a focused live check.
 
 ## User outcome
@@ -86,9 +86,9 @@ back to Hermes.
 ## Lifecycle and IPC
 
 - Omarchy IPC target is exactly `io.github.zombie-w33d.omapets`.
-- Methods are limited to bounded status/refresh, profile-event delivery, and
-  validated per-agent settings changes. Unknown profiles, invalid categories
-  and oversized payloads fail closed.
+- Methods are limited to bounded status/refresh, profile-event delivery,
+  first-pet motion diagnostics, and validated per-agent settings changes.
+  Unknown profiles, invalid categories and oversized payloads fail closed.
 - Service refreshes are serialized and generation-guarded so stale helper
   completions cannot re-enable a disabled pet or overwrite newer settings.
 - The pet's layer surface is transparent, top-layer and click-through outside

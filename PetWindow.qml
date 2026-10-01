@@ -76,6 +76,12 @@ PanelWindow {
     fallY = profile && profile.pet && height > 0 ? Math.min(startY, groundY) : -1
   }
 
+  // A bound PetSlot may receive its initial profile before onProfileChanged
+  // is connected. Initialize again at completion/visibility, not only on
+  // subsequent profile changes, or the gravity timer stays dormant at -1.
+  Component.onCompleted: root.resetPhysics()
+  onVisibleChanged: if (visible && fallY < 0) root.resetPhysics()
+
   onProfileChanged: {
     dragX = -1
     dragY = -1

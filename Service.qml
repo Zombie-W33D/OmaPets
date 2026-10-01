@@ -102,6 +102,10 @@ Item {
         refreshing: root.refreshing, error: root.lastError.slice(0, 120)
       })
     }
+    function firstPetMotion(): string {
+      return JSON.stringify({ y: petSlot0.fallY, floor: petSlot0.groundY,
+        velocity: petSlot0.velocityY, grounded: petSlot0.grounded })
+    }
   }
 
   Process {
@@ -176,7 +180,7 @@ Item {
       if (profile) root.configure(profile.id, "position", x.toFixed(4) + "," + y.toFixed(4))
     }
   }
-  PetSlot { slotIndex: 0 }
+  PetSlot { id: petSlot0; slotIndex: 0 }
   PetSlot { slotIndex: 1 }
   PetSlot { slotIndex: 2 }
   PetSlot { slotIndex: 3 }
