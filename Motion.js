@@ -104,7 +104,7 @@ function gripPosition(x, y, width, height, petWidth, petHeight) {
     ? Math.max(0, height - petHeight) : 0
   return {
     x: Number.isFinite(x) ? Math.max(0, Math.min(right, x - petWidth / 2)) : 0,
-    y: Number.isFinite(y) ? Math.max(0, Math.min(bottom, y)) : 0
+    y: Number.isFinite(y) ? Math.max(0, Math.min(bottom, y - (Number.isFinite(petHeight) ? petHeight * 0.1 : 0))) : 0
   }
 }
 
@@ -115,7 +115,7 @@ function heldFacing(previousX, currentX, wasFacingLeft) {
 
 function heldSway(deltaX) {
   return Number.isFinite(deltaX) && deltaX !== 0
-    ? Math.max(-8, Math.min(8, -0.4 * deltaX)) : 0
+    ? Math.max(-10, Math.min(10, -0.5 * deltaX)) : 0
 }
 
 function settleSway(angle) {

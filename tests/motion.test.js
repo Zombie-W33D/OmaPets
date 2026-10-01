@@ -191,8 +191,9 @@ test('held frames pause at center then alternate swing and idle squirm', () => {
     [2, 3, 4, 3, 2, 1, 0, 1]);
 });
 
-test('held pet anchors its top middle under the pointer without crossing the monitor', () => {
-  assert.deepEqual({ ...motion.gripPosition(500, 300, 1000, 700, 100, 120) }, { x: 450, y: 300 });
+test('held pet grips 10% below its top without crossing the monitor', () => {
+  assert.deepEqual({ ...motion.gripPosition(500, 300, 1000, 700, 100, 120) }, { x: 450, y: 288 });
+  assert.deepEqual({ ...motion.gripPosition(500, 60, 1000, 700, 100, 120) }, { x: 450, y: 48 });
   assert.deepEqual({ ...motion.gripPosition(0, 0, 1000, 700, 100, 120) }, { x: 0, y: 0 });
   assert.deepEqual({ ...motion.gripPosition(990, 690, 1000, 700, 100, 120) }, { x: 900, y: 580 });
 });
@@ -204,9 +205,10 @@ test('held pet faces against each new horizontal pointer movement', () => {
   assert.equal(motion.heldFacing(95, Number.NaN, true), true);
 });
 
-test('a held pet leans gently against mouse motion and settles upright', () => {
-  assert.equal(motion.heldSway(10), -4);
-  assert.equal(motion.heldSway(-100), 8);
+test('a held pet leans more against mouse motion and settles upright', () => {
+  assert.equal(motion.heldSway(10), -5);
+  assert.equal(motion.heldSway(20), -10);
+  assert.equal(motion.heldSway(-100), 10);
   assert.equal(motion.heldSway(0), 0);
   assert.equal(motion.heldSway(Number.NaN), 0);
   assert.equal(motion.settleSway(-8), -4.8);
@@ -220,7 +222,7 @@ test('the hosted pet uses row five and moving or resting frames while held', () 
   assert.match(windowSource, /root\.frame = Motion\.heldAnimation\([^)]*\)\.row === 4 \? 2 : 0/);
 });
 
-test('pickup and drag keep the pointer at the sprite top middle', () => {
+test('pickup and drag keep the pointer at the grip point below the sprite top', () => {
   const press = windowSource.split('onPressed: function(mouse) {')[1]?.split('onPositionChanged:')[0] || '';
   const move = windowSource.split('onPositionChanged: function(mouse) {')[1]?.split('onReleased:')[0] || '';
   for (const handler of [press, move]) {
