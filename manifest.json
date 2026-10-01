@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.zombie-w33d.omapets",
+  "name": "OmaPets",
+  "version": "0.1.0-alpha.1",
+  "author": "Zombie_W33D",
+  "license": "MIT",
+  "description": "Hermes-driven OpenPets desktop companions for Omarchy.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "OmaPets",
+    "description": "Hermes-driven OpenPets desktop companions for Omarchy.",
+    "category": "Other",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {},
+    "schema": []
+  }
+}
