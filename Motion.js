@@ -9,7 +9,7 @@ var SPEED_DURATION = { slow: 2250, normal: 1375, brisk: 750 }
 
 function tossGravityScale(elapsedMs) {
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return 1
-  return 0.5 + 0.5 * Math.min(1, elapsedMs / 5000)
+  return 0.5 + 0.5 * Math.min(1, elapsedMs / 2000)
 }
 
 function gravityStep(y, vy, floor, bounce, gravityScale) {
@@ -51,10 +51,10 @@ function releaseVelocity(samples, x, y, now) {
     if (!oldest || sample.t < oldest.t) oldest = sample
   }
   if (!oldest || now <= oldest.t) return zero
-  var tickFactor = 11.52 / (now - oldest.t) // 72% of pointer speed over one 16ms tick
+  var tickFactor = 14.4 / (now - oldest.t) // 90% of pointer speed over one 16ms tick
   return {
-    vx: Math.max(-14.4, Math.min(14.4, (x - oldest.x) * tickFactor)),
-    vy: Math.max(-17.28, Math.min(17.28, (y - oldest.y) * tickFactor))
+    vx: Math.max(-18, Math.min(18, (x - oldest.x) * tickFactor)),
+    vy: Math.max(-21.6, Math.min(21.6, (y - oldest.y) * tickFactor))
   }
 }
 

@@ -104,7 +104,7 @@ PanelWindow {
   onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
 
   // Normal gravity gains 1.1px per 16ms and caps at 24px. After a toss, pull
-  // starts at half and recovers over five seconds; the speed cap stays fixed.
+  // starts at half and recovers over two seconds; the speed cap stays fixed.
   // Bounce is damped, and settled pets need no physics ticks.
   Timer {
     interval: 16
