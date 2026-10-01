@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.8`
+**Preview version:** `0.1.0-alpha.9`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -96,9 +96,11 @@ back to Hermes.
   then bounce to a stop on the monitor floor; stay/wander controls horizontal
   movement with per-profile speed presets. Drag release retains the exact
   release position and applies bounded pointer-derived velocity for a short arc.
-  Toss gravity starts at half and recovers linearly over two seconds without
+  Toss gravity starts at half and recovers linearly over three seconds without
   changing ordinary drops; a same-pet settings refresh does not restart the
-  toss. New appearances start
+  toss. A held pet uses row five when available, grips by its top center,
+  mirrors against pointer movement, and gently tilts before returning to an
+  idle squirm. New appearances start
   at the top. No
   host restart or global shell configuration mutation is part of ordinary use.
 

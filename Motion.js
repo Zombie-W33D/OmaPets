@@ -9,7 +9,7 @@ var SPEED_DURATION = { slow: 2250, normal: 1375, brisk: 750 }
 
 function tossGravityScale(elapsedMs) {
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return 1
-  return 0.5 + 0.5 * Math.min(1, elapsedMs / 2000)
+  return 0.5 + 0.5 * Math.min(1, elapsedMs / 3000)
 }
 
 function gravityStep(y, vy, floor, bounce, gravityScale) {
@@ -51,10 +51,12 @@ function releaseVelocity(samples, x, y, now) {
     if (!oldest || sample.t < oldest.t) oldest = sample
   }
   if (!oldest || now <= oldest.t) return zero
-  var tickFactor = 14.4 / (now - oldest.t) // 90% of pointer speed over one 16ms tick
+  var elapsed = now - oldest.t
+  var horizontalFactor = 17.28 / elapsed // 108% of pointer speed over one 16ms tick
+  var verticalFactor = 12.24 / elapsed   // 76.5% of pointer speed over one 16ms tick
   return {
-    vx: Math.max(-18, Math.min(18, (x - oldest.x) * tickFactor)),
-    vy: Math.max(-21.6, Math.min(21.6, (y - oldest.y) * tickFactor))
+    vx: Math.max(-21.6, Math.min(21.6, (x - oldest.x) * horizontalFactor)),
+    vy: Math.max(-18.36, Math.min(18.36, (y - oldest.y) * verticalFactor))
   }
 }
 
@@ -87,6 +89,45 @@ function frameInterval(airborne, walking, category) {
   var original = airborne ? 168 : walking && category === "idle" ? 132
     : category === "idle" ? 900 : 180
   return Math.round(original / 1.2)
+}
+
+function heldAnimation(rows, columns) {
+  var count = Number.isFinite(columns) ? Math.max(1, Math.floor(columns)) : 1
+  return rows >= 5 && count >= 5
+    ? { row: 4, frames: 5 } : { row: 0, frames: Math.min(6, count) }
+}
+
+function gripPosition(x, y, width, height, petWidth, petHeight) {
+  var right = Number.isFinite(width) && Number.isFinite(petWidth)
+    ? Math.max(0, width - petWidth) : 0
+  var bottom = Number.isFinite(height) && Number.isFinite(petHeight)
+    ? Math.max(0, height - petHeight) : 0
+  return {
+    x: Number.isFinite(x) ? Math.max(0, Math.min(right, x - petWidth / 2)) : 0,
+    y: Number.isFinite(y) ? Math.max(0, Math.min(bottom, y)) : 0
+  }
+}
+
+function heldFacing(previousX, currentX, wasFacingLeft) {
+  if (!Number.isFinite(previousX) || !Number.isFinite(currentX)) return !!wasFacingLeft
+  return Math.abs(currentX - previousX) > 1 ? currentX > previousX : !!wasFacingLeft
+}
+
+function heldSway(deltaX) {
+  return Number.isFinite(deltaX) && deltaX !== 0
+    ? Math.max(-8, Math.min(8, -0.4 * deltaX)) : 0
+}
+
+function settleSway(angle) {
+  return Number.isFinite(angle) && Math.abs(angle) > 0.25 ? angle * 0.6 : 0
+}
+
+function heldFrame(phase, moving) {
+  var swing = [2, 3, 2, 1]
+  var squirm = [2, 3, 4, 3, 2, 1, 0, 1]
+  var sequence = moving ? swing : squirm
+  var index = Number.isFinite(phase) ? Math.max(0, Math.floor(phase)) : 0
+  return sequence[index % sequence.length]
 }
 
 // OpenPets V1/V2 defines jumping, not a distinct falling row. An airborne

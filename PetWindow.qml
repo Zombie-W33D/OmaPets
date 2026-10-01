@@ -40,13 +40,17 @@ PanelWindow {
   readonly property real pixelHeight: profile && profile.pet
     ? Math.max(40, Math.round(profile.pet.frameHeight * profile.scale / 4)) : 52
   readonly property string category: activity && activity.category ? activity.category : "idle"
-  readonly property var animation: airborne
-    ? Motion.airborneAnimation(profile && profile.pet ? profile.pet.rows : 0)
+  readonly property var animation: grabArea.pressed
+    ? Motion.heldAnimation(profile && profile.pet ? profile.pet.rows : 0,
+                           profile && profile.pet ? profile.pet.columns : 0)
+    : airborne ? Motion.airborneAnimation(profile && profile.pet ? profile.pet.rows : 0)
     : profile && profile.animations && profile.animations[category]
     ? profile.animations[category]
     : (walking && category === "idle"
        ? ({ row: facingLeft ? 2 : 1, frames: 8 }) : ({ row: 0, frames: 6 }))
   property int frame: 0
+  property int heldPhase: 0
+  property real lastPointerMotionMs: -1
   onCategoryChanged: { frame = 0; frameTick.restart() }
   onWalkingChanged: frame = 0
   onAirborneChanged: frame = 0
@@ -72,6 +76,8 @@ PanelWindow {
   property string renderedPetKey: ""
   property bool walking: false
   property bool facingLeft: false
+  property bool heldFacingLeft: false
+  property real heldSwayAngle: 0
   property bool infoVisible: false
 
   function resetPhysics() {
@@ -95,6 +101,7 @@ PanelWindow {
       dragY = -1
       roamX = -1
       velocityX = 0
+      heldSwayAngle = 0
       walking = false
       walkDuration.stop()
       Qt.callLater(root.resetPhysics)
@@ -104,7 +111,7 @@ PanelWindow {
   onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
 
   // Normal gravity gains 1.1px per 16ms and caps at 24px. After a toss, pull
-  // starts at half and recovers over two seconds; the speed cap stays fixed.
+  // starts at half and recovers over three seconds; the speed cap stays fixed.
   // Bounce is damped, and settled pets need no physics ticks.
   Timer {
     interval: 16
@@ -155,10 +162,21 @@ PanelWindow {
 
   Timer {
     id: frameTick
-    interval: Motion.frameInterval(root.airborne, root.walking, root.category)
+    interval: grabArea.pressed ? 140 : Motion.frameInterval(root.airborne, root.walking, root.category)
     repeat: true
     running: root.visible
-    onTriggered: root.frame = (root.frame + 1) % Math.max(1, root.animation.frames)
+    onTriggered: {
+      if (grabArea.pressed && root.animation.row === 4) {
+        root.heldPhase += 1
+        root.frame = Motion.heldFrame(root.heldPhase, Date.now() - root.lastPointerMotionMs < 180)
+      } else root.frame = (root.frame + 1) % Math.max(1, root.animation.frames)
+    }
+  }
+  Timer {
+    interval: 80
+    repeat: true
+    running: root.visible && grabArea.pressed
+    onTriggered: root.heldSwayAngle = Motion.settleSway(root.heldSwayAngle)
   }
   Timer {
     id: infoTimeout
@@ -173,6 +191,16 @@ PanelWindow {
     x: root.petX
     y: root.petY
     clip: true
+    transformOrigin: Item.Top
+    rotation: grabArea.pressed ? root.heldSwayAngle : 0
+    transform: Scale {
+      origin.x: sprite.width / 2
+      origin.y: 0
+      xScale: grabArea.pressed && root.heldFacingLeft ? -1 : 1
+    }
+    Behavior on rotation {
+      NumberAnimation { duration: 110; easing.type: Easing.OutQuad }
+    }
     Behavior on x {
       enabled: root.grounded && root.profile && root.profile.mode === "wander" && !grabArea.pressed
       NumberAnimation {
@@ -201,36 +229,53 @@ PanelWindow {
       cursorShape: Qt.PointingHandCursor
       property real pressX: 0
       property real pressY: 0
-      property real offsetX: 0
-      property real offsetY: 0
+      property real lastPointerX: 0
+      property real lastPointerY: 0
       property bool dragged: false
       property var pointerSamples: []
 
       onPressed: function(mouse) {
         walkDuration.stop()
         root.walking = false
+        root.heldPhase = 0
+        root.lastPointerMotionMs = Date.now()
+        root.frame = Motion.heldAnimation(root.profile.pet.rows, root.profile.pet.columns).row === 4 ? 2 : 0
+        frameTick.restart()
         var point = mapToItem(root.contentItem, mouse.x, mouse.y)
         pressX = point.x
         pressY = point.y
-        offsetX = point.x - sprite.x
-        offsetY = point.y - sprite.y
+        lastPointerX = point.x
+        lastPointerY = point.y
+        root.heldFacingLeft = root.facingLeft
+        root.heldSwayAngle = 0
+        var held = Motion.gripPosition(point.x, point.y, root.width, root.height, sprite.width, sprite.height)
+        root.dragX = held.x
+        root.dragY = held.y
         dragged = false
         pointerSamples = [{ x: point.x, y: point.y, t: Date.now() }]
       }
       onPositionChanged: function(mouse) {
         if (!pressed) return
         var point = mapToItem(root.contentItem, mouse.x, mouse.y)
+        root.heldFacingLeft = Motion.heldFacing(lastPointerX, point.x, root.heldFacingLeft)
+        root.heldSwayAngle = Motion.heldSway(point.x - lastPointerX)
+        if (Math.abs(point.x - lastPointerX) + Math.abs(point.y - lastPointerY) > 1)
+          root.lastPointerMotionMs = Date.now()
+        lastPointerX = point.x
+        lastPointerY = point.y
         if (!dragged && Math.abs(point.x - pressX) + Math.abs(point.y - pressY) < 8) return
         dragged = true
-        root.dragX = Math.max(0, Math.min(root.width - sprite.width, point.x - offsetX))
-        root.dragY = Math.max(0, Math.min(root.height - sprite.height, point.y - offsetY))
+        var held = Motion.gripPosition(point.x, point.y, root.width, root.height, sprite.width, sprite.height)
+        root.dragX = held.x
+        root.dragY = held.y
         pointerSamples = pointerSamples.slice(-7).concat([{ x: point.x, y: point.y, t: Date.now() }])
       }
       onReleased: function(mouse) {
         if (dragged && root.width > 0 && root.height > 0) {
           var point = mapToItem(root.contentItem, mouse.x, mouse.y)
-          root.dragX = Math.max(0, Math.min(root.width - sprite.width, point.x - offsetX))
-          root.dragY = Math.max(0, Math.min(root.height - sprite.height, point.y - offsetY))
+          var held = Motion.gripPosition(point.x, point.y, root.width, root.height, sprite.width, sprite.height)
+          root.dragX = held.x
+          root.dragY = held.y
           var now = Date.now()
           var velocity = Motion.releaseVelocity(pointerSamples, point.x, point.y, now)
           root.tossStartedAtMs = now
@@ -242,9 +287,13 @@ PanelWindow {
           root.dragY = -1
           root.positionRequested(root.roamX / root.width, root.fallY / root.height)
         } else {
+          root.dragX = -1
+          root.dragY = -1
           root.infoVisible = true
           infoTimeout.restart()
         }
+        root.heldSwayAngle = 0
+        root.frame = 0
         dragged = false
         pointerSamples = []
       }
@@ -253,6 +302,8 @@ PanelWindow {
         pointerSamples = []
         root.dragX = -1
         root.dragY = -1
+        root.heldSwayAngle = 0
+        root.frame = 0
       }
     }
   }

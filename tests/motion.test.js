@@ -39,8 +39,9 @@ test('same-pet settings refresh does not restart a toss at the top', () => {
 
 test('release uses actual cursor location and momentum instead of snapping to saved placement', () => {
   const release = windowSource.split('onReleased: function(mouse) {')[1]?.split('onCanceled:')[0] || '';
-  assert.match(release, /root\.dragX = Math\.max\(0, Math\.min\(root\.width - sprite\.width, point\.x - offsetX\)\)/);
-  assert.match(release, /root\.dragY = Math\.max\(0, Math\.min\(root\.height - sprite\.height, point\.y - offsetY\)\)/);
+  assert.match(release, /var held = Motion\.gripPosition\(point\.x, point\.y, root\.width, root\.height, sprite\.width, sprite\.height\)/);
+  assert.match(release, /root\.dragX = held\.x/);
+  assert.match(release, /root\.dragY = held\.y/);
   assert.match(release, /var now = Date\.now\(\)/);
   assert.match(release, /Motion\.releaseVelocity\(pointerSamples, point\.x, point\.y, now\)/);
   assert.match(release, /root\.tossStartedAtMs = now/);
@@ -51,17 +52,17 @@ test('release uses actual cursor location and momentum instead of snapping to sa
   assert.match(release, /root\.dragX = -1/);
 });
 
-test('a recent pointer swipe gets 25% more toss speed over alpha.7', () => {
+test('a toss gains 20% horizontal speed and loses 15% vertical speed over alpha.8', () => {
   const samples = [{ x: 100, y: 200, t: 1000 }, { x: 140, y: 180, t: 1040 }];
   const velocity = motion.releaseVelocity(samples, 150, 175, 1050);
-  assert.ok(Math.abs(velocity.vx - 14.4) < 1e-9);
-  assert.ok(Math.abs(velocity.vy + 7.2) < 1e-9);
+  assert.ok(Math.abs(velocity.vx - 17.28) < 1e-9);
+  assert.ok(Math.abs(velocity.vy + 6.12) < 1e-9);
   const paused = motion.releaseVelocity(samples, 150, 175, 1201);
   assert.equal(paused.vx, 0);
   assert.equal(paused.vy, 0);
   const fast = motion.releaseVelocity([{ x: 0, y: 0, t: 1000 }], 2000, -2000, 1001);
-  assert.ok(Math.abs(fast.vx - 18) < 1e-9);
-  assert.ok(Math.abs(fast.vy + 21.6) < 1e-9);
+  assert.ok(Math.abs(fast.vx - 21.6) < 1e-9);
+  assert.ok(Math.abs(fast.vy + 18.36) < 1e-9);
 });
 
 test('airborne horizontal momentum makes a short arc and stops at screen edges', () => {
@@ -90,10 +91,10 @@ test('the fall timer gradually restores normal gravity only after a toss', () =>
   assert.match(fallTick, /Motion\.gravityStep\(root\.fallY, root\.velocityY, root\.groundY, 0\.4, gravityScale\)/);
 });
 
-test('toss gravity starts at half and returns to normal over two seconds', () => {
+test('toss gravity starts at half and returns to normal over three seconds', () => {
   assert.equal(motion.tossGravityScale(0), 0.5);
-  assert.equal(motion.tossGravityScale(1000), 0.75);
-  assert.equal(motion.tossGravityScale(2000), 1);
+  assert.equal(motion.tossGravityScale(1500), 0.75);
+  assert.equal(motion.tossGravityScale(3000), 1);
   assert.equal(motion.tossGravityScale(5000), 1);
   assert.equal(motion.tossGravityScale(-1), 1);
   assert.equal(motion.tossGravityScale(Number.NaN), 1);
@@ -173,8 +174,70 @@ test('sprite frames play at 120% of their former cadence', () => {
   assert.equal(motion.frameInterval(false, false, 'thinking'), 150);
 });
 
-test('the frame timer uses the shared 120% animation cadence', () => {
-  assert.match(windowSource, /id:\s*frameTick\s+interval:\s*Motion\.frameInterval\(root\.airborne,\s*root\.walking,\s*root\.category\)/);
+test('the frame timer keeps the 120% animation cadence outside the held state', () => {
+  assert.match(windowSource, /interval: grabArea\.pressed \? 140 : Motion\.frameInterval\(root\.airborne,\s*root\.walking,\s*root\.category\)/);
+});
+
+test('the fifth atlas row is a held squirm when available, with a safe fallback', () => {
+  assert.deepEqual({ ...motion.heldAnimation(9, 8) }, { row: 4, frames: 5 });
+  assert.deepEqual({ ...motion.heldAnimation(4, 8) }, { row: 0, frames: 6 });
+  assert.deepEqual({ ...motion.heldAnimation(9, 3) }, { row: 0, frames: 3 });
+});
+
+test('held frames pause at center then alternate swing and idle squirm', () => {
+  assert.equal(motion.heldFrame(0, true), 2);
+  assert.deepEqual([0, 1, 2, 3, 4].map(n => motion.heldFrame(n, true)), [2, 3, 2, 1, 2]);
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7].map(n => motion.heldFrame(n, false)),
+    [2, 3, 4, 3, 2, 1, 0, 1]);
+});
+
+test('held pet anchors its top middle under the pointer without crossing the monitor', () => {
+  assert.deepEqual({ ...motion.gripPosition(500, 300, 1000, 700, 100, 120) }, { x: 450, y: 300 });
+  assert.deepEqual({ ...motion.gripPosition(0, 0, 1000, 700, 100, 120) }, { x: 0, y: 0 });
+  assert.deepEqual({ ...motion.gripPosition(990, 690, 1000, 700, 100, 120) }, { x: 900, y: 580 });
+});
+
+test('held pet faces against each new horizontal pointer movement', () => {
+  assert.equal(motion.heldFacing(100, 110, false), true);
+  assert.equal(motion.heldFacing(110, 95, true), false);
+  assert.equal(motion.heldFacing(95, 95.5, false), false);
+  assert.equal(motion.heldFacing(95, Number.NaN, true), true);
+});
+
+test('a held pet leans gently against mouse motion and settles upright', () => {
+  assert.equal(motion.heldSway(10), -4);
+  assert.equal(motion.heldSway(-100), 8);
+  assert.equal(motion.heldSway(0), 0);
+  assert.equal(motion.heldSway(Number.NaN), 0);
+  assert.equal(motion.settleSway(-8), -4.8);
+  assert.equal(motion.settleSway(0.1), 0);
+});
+
+test('the hosted pet uses row five and moving or resting frames while held', () => {
+  assert.match(windowSource, /readonly property var animation: grabArea\.pressed\s*\? Motion\.heldAnimation\(/);
+  assert.match(windowSource, /interval: grabArea\.pressed \? 140 : Motion\.frameInterval/);
+  assert.match(windowSource, /Motion\.heldFrame\(root\.heldPhase, Date\.now\(\) - root\.lastPointerMotionMs < 180\)/);
+  assert.match(windowSource, /root\.frame = Motion\.heldAnimation\([^)]*\)\.row === 4 \? 2 : 0/);
+});
+
+test('pickup and drag keep the pointer at the sprite top middle', () => {
+  const press = windowSource.split('onPressed: function(mouse) {')[1]?.split('onPositionChanged:')[0] || '';
+  const move = windowSource.split('onPositionChanged: function(mouse) {')[1]?.split('onReleased:')[0] || '';
+  for (const handler of [press, move]) {
+    assert.match(handler, /Motion\.gripPosition\(point\.x, point\.y, root\.width, root\.height, sprite\.width, sprite\.height\)/);
+    assert.match(handler, /root\.dragX = held\.x/);
+    assert.match(handler, /root\.dragY = held\.y/);
+  }
+});
+
+test('held facing and sway follow mouse motion then settle', () => {
+  const move = windowSource.split('onPositionChanged: function(mouse) {')[1]?.split('onReleased:')[0] || '';
+  assert.match(move, /root\.heldFacingLeft = Motion\.heldFacing\(lastPointerX, point\.x, root\.heldFacingLeft\)/);
+  assert.match(move, /root\.heldSwayAngle = Motion\.heldSway\(point\.x - lastPointerX\)/);
+  assert.match(move, /root\.lastPointerMotionMs = Date\.now\(\)/);
+  assert.match(windowSource, /xScale: grabArea\.pressed && root\.heldFacingLeft \? -1 : 1/);
+  assert.match(windowSource, /rotation: grabArea\.pressed \? root\.heldSwayAngle : 0/);
+  assert.match(windowSource, /Motion\.settleSway\(root\.heldSwayAngle\)/);
 });
 
 test('OpenPets speed presets and airborne animation have a bounded fallback', () => {
