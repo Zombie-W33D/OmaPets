@@ -16,6 +16,7 @@ Item {
   property var profiles: []
   property var petIds: []
   property var activity: ({})
+  property var surfaces: ({})
   property string previousSnapshot: ""
   property double nowMs: Date.now()
   property bool refreshing: false
@@ -64,6 +65,10 @@ Item {
 
   function activityFor(id) {
     return Model.visibleEvent(root.activity[id], root.nowMs)
+  }
+
+  function surfacesFor(name) {
+    return root.surfaces[name] || []
   }
 
   function emitEvent(id, category) {
@@ -155,6 +160,41 @@ Item {
     }
   }
 
+  Process {
+    id: surfaceProcess
+    stdout: StdioCollector { id: surfaceOutput; waitForEnd: true }
+    onExited: function(exitCode) {
+      surfaceDeadline.stop()
+      if (exitCode !== 0 || root.renderableProfiles.length === 0) {
+        root.surfaces = ({})
+        return
+      }
+      try {
+        if (surfaceOutput.text.length > 32768) throw new Error("large surface snapshot")
+        var parsed = JSON.parse(surfaceOutput.text)
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid surface snapshot")
+        var clean = ({})
+        var names = Object.keys(parsed)
+        if (names.length > 8) throw new Error("too many monitors")
+        for (var i = 0; i < names.length; i++) {
+          var edges = parsed[names[i]]
+          if (!Array.isArray(edges) || edges.length > 64) throw new Error("too many edges")
+          clean[names[i]] = edges.filter(function(edge) {
+            return edge && Number.isFinite(edge.x) && Number.isFinite(edge.y)
+              && Number.isFinite(edge.width) && edge.width > 0
+          })
+        }
+        root.surfaces = clean
+      } catch (error) { root.surfaces = ({}) }
+    }
+  }
+
+  Timer {
+    id: surfaceDeadline
+    interval: 4800
+    onTriggered: { surfaceProcess.running = false; root.surfaces = ({}) }
+  }
+
   Timer {
     interval: 30000
     repeat: true
@@ -169,6 +209,19 @@ Item {
     onTriggered: root.nowMs = Date.now()
   }
 
+  Timer {
+    interval: 1200
+    repeat: true
+    triggeredOnStart: true
+    running: root.renderableProfiles.length > 0
+    onTriggered: {
+      if (surfaceProcess.running) return
+      surfaceProcess.command = ["/usr/bin/python3", "-I", root.helperPath, "surfaces"]
+      surfaceProcess.running = true
+      surfaceDeadline.restart()
+    }
+  }
+
   // Static slots avoid dynamic layer-surface destruction on plugin reload;
   // Omagatchi observed zombie layer surfaces when windows were Loader-created.
   // Each slot is independently masked; disabled slots remain invisible.
@@ -176,6 +229,7 @@ Item {
     required property int slotIndex
     profile: root.profileAt(slotIndex)
     activity: root.activityFor(profile ? profile.id : "")
+    surfaces: root.surfacesFor(selectedScreen ? selectedScreen.name : "")
     onPositionRequested: function(x, y) {
       if (profile) root.configure(profile.id, "position", x.toFixed(4) + "," + y.toFixed(4))
     }

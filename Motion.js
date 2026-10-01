@@ -34,6 +34,44 @@ function gravityStep(y, vy, floor, bounce, gravityScale) {
   return { y: position, vy: velocity }
 }
 
+function validSurface(surface, x, petWidth) {
+  return surface && Number.isFinite(surface.x) && Number.isFinite(surface.y)
+    && Number.isFinite(surface.width) && surface.width > 0
+    && Number.isFinite(x) && Number.isFinite(petWidth) && petWidth > 0
+    && x + petWidth / 2 > surface.x
+    && x + petWidth / 2 < surface.x + surface.width
+}
+
+function landingSurface(fromY, toY, x, petWidth, petHeight, surfaces) {
+  if (!Array.isArray(surfaces) || !Number.isFinite(fromY) || !Number.isFinite(toY)
+      || !Number.isFinite(petHeight) || petHeight <= 0 || toY <= fromY) return null
+  var hit = null
+  for (var i = 0; i < surfaces.length; i++) {
+    var surface = surfaces[i]
+    if (!validSurface(surface, x, petWidth)) continue
+    var top = surface.y - petHeight
+    if (fromY + petHeight <= surface.y && toY + petHeight >= surface.y
+        && (!hit || top < hit.y - petHeight)) hit = surface
+  }
+  return hit
+}
+
+function supportAt(y, x, petWidth, petHeight, surfaces) {
+  if (!Array.isArray(surfaces) || !Number.isFinite(y) || !Number.isFinite(petHeight)) return null
+  for (var i = 0; i < surfaces.length; i++) {
+    var surface = surfaces[i]
+    if (validSurface(surface, x, petWidth) && Math.abs(y + petHeight - surface.y) < 1)
+      return surface
+  }
+  return null
+}
+
+function wanderOnSurface(current, target, surface, petWidth) {
+  if (!surface || !Number.isFinite(surface.x) || !Number.isFinite(surface.width)
+      || !Number.isFinite(petWidth) || surface.width < petWidth) return current
+  return Math.max(surface.x, Math.min(surface.x + surface.width - petWidth, target))
+}
+
 function petIdentity(profile) {
   if (!profile || !profile.id || !profile.petId) return ""
   return JSON.stringify([profile.id, profile.petId, profile.screen || ""])

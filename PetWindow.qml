@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import "Motion.js" as Motion
+import "Model.js" as Model
 
 // Omagatchi-style transparent, fixed full-monitor layer surface. Only the
 // sprite accepts input; a press temporarily expands the region for reliable
@@ -11,6 +12,7 @@ PanelWindow {
   id: root
   property var profile: null
   property var activity: ({ category: "idle", phrase: "" })
+  property var surfaces: []
   signal positionRequested(real x, real y)
 
   readonly property var selectedScreen: {
@@ -67,7 +69,9 @@ PanelWindow {
   property real velocityY: 0
   property real velocityX: 0
   property real tossStartedAtMs: -1
-  readonly property bool grounded: fallY >= 0 && fallY >= groundY && velocityY === 0
+  property real supportY: -1
+  readonly property bool grounded: fallY >= 0 && velocityY === 0
+    && (fallY >= groundY || (supportY >= 0 && Math.abs(fallY - supportY) < 1))
   readonly property bool airborne: fallY >= 0 && !grounded && !grabArea.pressed
   readonly property real petX: dragX >= 0 ? dragX
     : (roamX >= 0 ? roamX : startX)
@@ -82,6 +86,7 @@ PanelWindow {
 
   function resetPhysics() {
     tossStartedAtMs = -1
+    supportY = -1
     velocityX = 0
     velocityY = 0
     fallY = profile && profile.pet && height > 0 ? 0 : -1
@@ -108,7 +113,17 @@ PanelWindow {
     }
   }
   onHeightChanged: if (profile && profile.pet && fallY < 0) root.resetPhysics()
-  onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
+  onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0; supportY = -1 }
+  function validateSupport() {
+    if (supportY >= 0 && !Motion.supportAt(root.supportY, root.petX,
+                                             root.pixelWidth, root.pixelHeight, root.surfaces)) {
+      supportY = -1
+      velocityY = 0
+      walking = false
+      walkDuration.stop()
+    }
+  }
+  onSurfacesChanged: root.validateSupport()
 
   // Normal gravity gains 1.1px per 16ms and caps at 24px. After a toss, pull
   // starts at half and recovers over three seconds; the speed cap stays fixed.
@@ -125,8 +140,14 @@ PanelWindow {
       }
       var gravityScale = root.tossStartedAtMs < 0 ? 1 : Motion.tossGravityScale(Date.now() - root.tossStartedAtMs)
       var next = Motion.gravityStep(root.fallY, root.velocityY, root.groundY, 0.4, gravityScale)
+      var landing = root.velocityY >= 0
+        ? Motion.landingSurface(root.fallY, next.y, root.petX, root.pixelWidth, root.pixelHeight, root.surfaces)
+        : null
+      if (landing && landing.y >= root.pixelHeight)
+        next = Motion.gravityStep(root.fallY, root.velocityY, landing.y - root.pixelHeight, 0.4, gravityScale)
       root.velocityY = next.vy
       root.fallY = next.y
+      root.supportY = landing && next.vy === 0 ? next.y : -1
       if (root.grounded) root.velocityX = 0
     }
   }
@@ -135,6 +156,11 @@ PanelWindow {
     var current = root.roamX >= 0 ? root.roamX : sprite.x
     var direction = Math.random() < 0.5 ? -1 : 1
     var next = Motion.wanderTarget(current, root.width, root.pixelWidth, direction)
+    if (root.supportY >= 0) {
+      var surface = Motion.supportAt(root.supportY, current, root.pixelWidth,
+                                     root.pixelHeight, root.surfaces)
+      if (surface) next = Motion.wanderOnSurface(current, next, surface, root.pixelWidth)
+    }
     if (next === current) return
     root.facingLeft = next < current
     root.roamX = next
@@ -180,7 +206,7 @@ PanelWindow {
   }
   Timer {
     id: infoTimeout
-    interval: 2500
+    interval: 6000
     onTriggered: root.infoVisible = false
   }
 
@@ -272,6 +298,8 @@ PanelWindow {
       }
       onReleased: function(mouse) {
         if (dragged && root.width > 0 && root.height > 0) {
+          root.infoVisible = false
+          infoTimeout.stop()
           var point = mapToItem(root.contentItem, mouse.x, mouse.y)
           var held = Motion.gripPosition(point.x, point.y, root.width, root.height, sprite.width, sprite.height)
           root.dragX = held.x
@@ -279,6 +307,7 @@ PanelWindow {
           var now = Date.now()
           var velocity = Motion.releaseVelocity(pointerSamples, point.x, point.y, now)
           root.tossStartedAtMs = now
+          root.supportY = -1
           root.roamX = root.dragX
           root.fallY = root.dragY
           root.velocityX = velocity.vx
@@ -289,8 +318,9 @@ PanelWindow {
         } else {
           root.dragX = -1
           root.dragY = -1
-          root.infoVisible = true
-          infoTimeout.restart()
+          root.infoVisible = !root.infoVisible
+          if (root.infoVisible) infoTimeout.restart()
+          else infoTimeout.stop()
         }
         root.heldSwayAngle = 0
         root.frame = 0
@@ -310,9 +340,8 @@ PanelWindow {
 
   Rectangle {
     id: bubble
-    readonly property string phrase: root.activity && root.activity.phrase ? root.activity.phrase : ""
-    readonly property string message: phrase || (root.infoVisible && root.profile ? root.profile.id : "")
-    visible: message !== ""
+    readonly property string message: root.activity && root.activity.phrase ? root.activity.phrase : ""
+    visible: message !== "" && !root.infoVisible
     x: Math.max(0, Math.min(root.width - width, sprite.x + sprite.width / 2 - width / 2))
     y: sprite.y > height + 8 ? sprite.y - height - 8 : sprite.y + sprite.height + 8
     width: Math.min(280, label.implicitWidth + 20)
@@ -333,6 +362,47 @@ PanelWindow {
       width: Math.min(260, implicitWidth)
       wrapMode: Text.Wrap
       horizontalAlignment: Text.AlignHCenter
+    }
+  }
+
+  // Left click is informational only. The lifecycle event chooses the phrase;
+  // showing this card never changes state or samples a fresh response.
+  Rectangle {
+    id: card
+    visible: root.infoVisible && !grabArea.pressed
+    width: Math.min(260, Math.max(160, root.width - 16))
+    height: cardHeader.implicitHeight + (cardBody.visible ? cardBody.implicitHeight + 8 : 0) + 24
+    x: Math.max(0, Math.min(root.width - width, sprite.x + sprite.width / 2 - width / 2))
+    y: Math.max(0, sprite.y - height - 8)
+    radius: 9
+    color: Color.background
+    opacity: 0.96
+    border.color: Color.foreground
+    border.width: 1
+
+    Text {
+      id: cardHeader
+      x: 12
+      y: 10
+      width: card.width - 24
+      text: (root.profile ? root.profile.id : "Agent") + " · " + Model.statusLabel(root.category)
+      textFormat: Text.PlainText
+      color: Color.foreground
+      font.bold: true
+      font.pixelSize: 12
+      elide: Text.ElideRight
+    }
+    Text {
+      id: cardBody
+      x: 12
+      y: cardHeader.y + cardHeader.implicitHeight + 8
+      width: card.width - 24
+      text: root.activity && root.activity.phrase ? root.activity.phrase : ""
+      visible: text !== ""
+      textFormat: Text.PlainText
+      color: Color.foreground
+      font.pixelSize: 12
+      wrapMode: Text.Wrap
     }
   }
 }

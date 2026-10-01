@@ -29,6 +29,48 @@ class RuntimeTests(unittest.TestCase):
         (package / "spritesheet.webp").write_bytes(b"RIFF" + len(body).to_bytes(4, "little") + body)
         return package
 
+    def test_surface_snapshot_uses_only_visible_windows_and_bar_on_correct_monitor(self):
+        from scripts.omapets_surfaces import surfaces_by_monitor
+        monitors = [
+            {"id": 0, "name": "DP-1", "x": 3072, "y": 0, "width": 3840, "height": 2160,
+             "scale": 1.25, "activeWorkspace": {"id": 1}, "specialWorkspace": {"id": 0}},
+            {"id": 1, "name": "DP-2", "x": 0, "y": 0, "width": 1920, "height": 1080,
+             "scale": 0.625, "activeWorkspace": {"id": 6}, "specialWorkspace": {"id": 0}},
+        ]
+        clients = [
+            {"monitor": 0, "at": [3084, 83], "size": [1532, 1268], "workspace": {"id": 1}, "mapped": True, "hidden": False},
+            {"monitor": 0, "at": [3084, 55], "size": [1532, 1268], "workspace": {"id": -98}, "mapped": True, "hidden": False},
+            {"monitor": 1, "at": [12, 55], "size": [1517, 1661], "workspace": {"id": 6}, "mapped": True, "hidden": False},
+            {"monitor": 0, "at": [3084, 83], "size": [1532, 1268], "workspace": {"id": 1}, "mapped": False, "hidden": False},
+        ]
+        layers = {"DP-1": {"levels": {"2": [{"namespace": "omarchy-bar", "x": 3072, "y": 0, "w": 3072, "h": 43},
+                                              {"namespace": "omapets", "x": 3072, "y": 0, "w": 3072, "h": 1728}]}},
+                  "DP-2": {"levels": {"2": [{"namespace": "omarchy-bar", "x": 0, "y": 0, "w": 3072, "h": 43}]}}}
+        result = surfaces_by_monitor(monitors, clients, layers)
+        self.assertEqual(result["DP-1"], [{"x": 12, "y": 83, "width": 1532}, {"x": 0, "y": 43, "width": 3072}])
+        self.assertEqual(result["DP-2"], [{"x": 12, "y": 55, "width": 1517}, {"x": 0, "y": 43, "width": 3072}])
+
+    def test_all_activity_states_have_distinct_nonempty_shared_defaults(self):
+        self.add_pet()
+        config = default_config()
+        config.update(enabled=True, petId="socksy")
+        write_profile_config(self.root, config)
+        snapshot = build_snapshot(self.root, self.defaults)["profiles"][0]
+        for state in ("thinking", "working", "waiting_on_you", "waiting_on_task", "finished", "failed"):
+            with self.subTest(state=state):
+                self.assertGreaterEqual(len(snapshot["phrases"][state]), 3)
+                self.assertGreaterEqual(snapshot["animations"][state]["frames"], 1)
+
+    def test_working_default_has_plausible_phrases_and_a_running_animation(self):
+        self.add_pet()
+        config = default_config()
+        config.update(enabled=True, petId="socksy")
+        write_profile_config(self.root, config)
+        snapshot = build_snapshot(self.root, self.defaults)["profiles"][0]
+        self.assertGreaterEqual(len(snapshot["phrases"]["working"]), 3)
+        self.assertTrue(all(isinstance(line, str) and line for line in snapshot["phrases"]["working"]))
+        self.assertEqual(snapshot["animations"]["working"], {"row": 7, "frames": 6})
+
     def test_missing_config_lists_disabled_profile_without_render_asset(self):
         self.add_pet()
         snapshot = build_snapshot(self.root, self.defaults)

@@ -160,6 +160,39 @@ test('invalid positions and a shrinking monitor cannot put a pet off-screen', ()
   assert.equal(shrunk.vy, 0);
 });
 
+test('a falling pet lands only on a crossed, overlapping window or bar top', () => {
+  const surfaces = [{ x: 100, y: 300, width: 200 }, { x: 400, y: 500, width: 80 }];
+  assert.deepEqual({ ...motion.landingSurface(240, 261, 150, 40, 40, surfaces) }, { y: 300, x: 100, width: 200 });
+  assert.equal(motion.landingSurface(270, 310, 150, 40, 40, surfaces), null);
+  assert.equal(motion.landingSurface(240, 261, 60, 40, 40, surfaces), null);
+  assert.equal(motion.landingSurface(240, 261, 300, 40, 40, surfaces), null);
+  assert.equal(motion.landingSurface(100, 270, 150, 40, 40, surfaces)?.y, 300);
+  assert.equal(motion.landingSurface(240, 261, 150, 40, 0, surfaces), null);
+});
+
+test('perched pets walk within the supporting surface and fall when support disappears', () => {
+  const surface = { x: 100, y: 300, width: 200 };
+  assert.equal(motion.supportAt(260, 240, 40, 40, [surface])?.x, 100);
+  assert.equal(motion.supportAt(260, 310, 40, 40, [surface]), null);
+  assert.equal(motion.supportAt(260, 240, 40, 40, []), null);
+  assert.equal(motion.wanderOnSurface(260, 380, surface, 40), 260);
+  assert.equal(motion.wanderOnSurface(120, 0, surface, 40), 100);
+});
+
+test('service polls sanitized Hyprland geometry only while pets are enabled', () => {
+  const service = fs.readFileSync(path.join(__dirname, '..', 'Service.qml'), 'utf8');
+  assert.match(service, /property var surfaces: \(\{\}\)/);
+  assert.match(service, /"surfaces"/);
+  assert.match(service, /running: root\.renderableProfiles\.length > 0/);
+  assert.match(service, /surfaces: root\.surfacesFor\(selectedScreen/);
+});
+
+test('the falling pet consults visible surfaces and releases them when geometry changes', () => {
+  assert.match(windowSource, /Motion\.landingSurface\(root\.fallY,.*root\.surfaces\)/s);
+  assert.match(windowSource, /Motion\.supportAt\(root\.supportY,.*root\.surfaces\)/s);
+  assert.match(windowSource, /Motion\.wanderOnSurface\(/);
+});
+
 test('wander uses OpenPets 120px steps and reverses at a monitor edge', () => {
   assert.equal(motion.wanderTarget(200, 1000, 100, 1), 320);
   assert.equal(motion.wanderTarget(900, 1000, 100, 1), 780);
@@ -213,6 +246,17 @@ test('a held pet leans more against mouse motion and settles upright', () => {
   assert.equal(motion.heldSway(Number.NaN), 0);
   assert.equal(motion.settleSway(-8), -4.8);
   assert.equal(motion.settleSway(0.1), 0);
+});
+
+test('left click only toggles the above-pet card while state events own the speech', () => {
+  const released = windowSource.split('onReleased: function(mouse) {')[1]?.split('onCanceled:')[0] || '';
+  assert.match(released, /root\.infoVisible = !root\.infoVisible/);
+  assert.doesNotMatch(released, /emitEvent|applyEvent|Math\.random/);
+  assert.match(windowSource, /id: card[\s\S]*visible: root\.infoVisible && !grabArea\.pressed/);
+  assert.match(windowSource, /id: card[\s\S]*y: Math\.max\(0, sprite\.y - height - 8\)/);
+  assert.match(windowSource, /Model\.statusLabel\(root\.category\)/);
+  assert.match(windowSource, /id: bubble[\s\S]*readonly property string message: root\.activity && root\.activity\.phrase \? root\.activity\.phrase : ""/);
+  assert.doesNotMatch(windowSource, /root\.infoVisible && root\.profile \? root\.profile\.id/);
 });
 
 test('the hosted pet uses row five and moving or resting frames while held', () => {

@@ -21,6 +21,7 @@ def run(argv=None):
     parser.add_argument("--defaults", type=Path, default=Path(__file__).resolve().parents[1] / "phrases")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("snapshot")
+    subcommands.add_parser("surfaces")
     setter = subcommands.add_parser("set")
     setter.add_argument("profile")
     setter.add_argument("field", choices=("enabled", "petId", "mode", "speed", "position", "screen", "scale"))
@@ -29,6 +30,9 @@ def run(argv=None):
 
     if args.command == "snapshot":
         result = build_snapshot(args.root, args.defaults)
+    elif args.command == "surfaces":
+        from scripts.omapets_surfaces import live_surfaces
+        result = live_surfaces()
     else:
         profiles = dict(discover_profile_homes(args.root))
         if args.profile not in profiles:

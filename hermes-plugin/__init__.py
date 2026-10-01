@@ -21,7 +21,7 @@ _HOOKS = (
 def event_for(name, payload):
     """Read only status fields; never classify user/assistant/tool text."""
     mapping = {
-        "pre_llm_call": "thinking", "pre_tool_call": "waiting_on_task",
+        "pre_llm_call": "thinking", "pre_tool_call": "working",
         "post_llm_call": "finished", "pre_approval_request": "waiting_on_you",
         "api_request_error": "failed",
     }

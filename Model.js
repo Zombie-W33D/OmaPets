@@ -1,4 +1,13 @@
-var CATEGORIES = ["thinking", "waiting_on_you", "waiting_on_task", "yes", "no", "success", "finished", "failed"]
+var CATEGORIES = ["thinking", "working", "waiting_on_you", "waiting_on_task", "yes", "no", "success", "finished", "failed"]
+
+function statusLabel(category) {
+  var names = {
+    thinking: "Thinking", working: "Working", waiting_on_you: "Waiting for you",
+    waiting_on_task: "Waiting on task", yes: "Yes", no: "No",
+    success: "Success", finished: "Finished", failed: "Failed"
+  }
+  return Object.prototype.hasOwnProperty.call(names, category) ? names[category] : "Idle"
+}
 
 function applyEvent(profiles, active, profileId, category, now, random) {
   if (typeof profileId !== "string" || profileId.length > 64

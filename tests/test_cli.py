@@ -22,6 +22,17 @@ class CliTests(unittest.TestCase):
                                "--defaults", str(DEFAULTS), *args], capture_output=True,
                               text=True, timeout=3)
 
+    def test_surface_cli_returns_only_sanitized_geometry(self):
+        import io
+        from contextlib import redirect_stdout
+        from unittest.mock import patch
+        from scripts.omapets_cli import run
+        output = io.StringIO()
+        with patch("scripts.omapets_surfaces.live_surfaces", return_value={"DP-1": [{"x": 4, "y": 43, "width": 500}]}):
+            with redirect_stdout(output):
+                self.assertEqual(run(["surfaces"]), 0)
+        self.assertEqual(json.loads(output.getvalue()), {"DP-1": [{"x": 4, "y": 43, "width": 500}]})
+
     def test_snapshot_reports_disabled_default_profile(self):
         result = self.invoke("snapshot")
         self.assertEqual(result.returncode, 0, result.stderr)

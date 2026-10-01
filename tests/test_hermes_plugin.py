@@ -13,7 +13,7 @@ spec.loader.exec_module(module)
 class HermesHookTests(unittest.TestCase):
     def test_native_hook_events_do_not_classify_response_text(self):
         self.assertEqual(module.event_for("pre_llm_call", {"user_message": "yes"}), "thinking")
-        self.assertEqual(module.event_for("pre_tool_call", {"tool_name": "terminal"}), "waiting_on_task")
+        self.assertEqual(module.event_for("pre_tool_call", {"tool_name": "terminal"}), "working")
         self.assertIsNone(module.event_for("post_tool_call", {"status": "ok", "result": "success!"}))
         self.assertEqual(module.event_for("post_tool_call", {"status": "error"}), "failed")
         self.assertEqual(module.event_for("post_llm_call", {"assistant_response": "No."}), "finished")
@@ -26,7 +26,7 @@ class HermesHookTests(unittest.TestCase):
                                                lambda: "codedump")
         callback(tool_name="private", args={"password": "sensitive"},
                  result="private chat", user_message="private chat")
-        self.assertEqual(sent, [("codedump", "waiting_on_task")])
+        self.assertEqual(sent, [("codedump", "working")])
         self.assertIsNone(callback(tool_name="private", args={"password": "sensitive"}))
 
     def test_invalid_or_missing_profile_is_not_sent(self):

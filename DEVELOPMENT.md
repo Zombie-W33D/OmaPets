@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.10`
+**Preview version:** `0.1.0-alpha.11`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -49,7 +49,7 @@ customized.
 
 ## Explicit state contract
 
-Activity states: `thinking`, `waiting_on_you`, `waiting_on_task`, `finished`,
+Activity states: `thinking`, `working`, `waiting_on_you`, `waiting_on_task`, `finished`,
 `failed`. Response categories: `yes`, `no`, `success`. `success` means an agent
 made something work; `finished` means its turn/task ended. Do not infer
 categories by classifying user or assistant text.
@@ -59,6 +59,7 @@ Initial animation suggestions (all fall back to `idle` when unavailable):
 | Signal | OpenPets animation |
 | --- | --- |
 | thinking | review |
+| working | running |
 | waiting_on_you | waiting |
 | waiting_on_task | waiting |
 | yes | waving |
@@ -93,7 +94,7 @@ back to Hermes.
   completions cannot re-enable a disabled pet or overwrite newer settings.
 - The pet's layer surface is transparent, top-layer and click-through outside
   its hit region. Pets drop from the top at their per-profile horizontal position,
-  then bounce to a stop on the monitor floor; stay/wander controls horizontal
+  then bounce to a stop on a visible window top, Omarchy bar, or the monitor floor; stay/wander controls horizontal
   movement with per-profile speed presets. Drag release retains the exact
   release position and applies bounded pointer-derived velocity for a short arc.
   Toss gravity starts at half and recovers linearly over three seconds without
@@ -101,7 +102,8 @@ back to Hermes.
   toss. A held pet uses row five when available, grips at its horizontal center
   10% below its top, mirrors against pointer movement, and tilts before returning to an
   idle squirm. New appearances start
-  at the top. No
+  at the top. A left click toggles an above-pet status/phrase card without
+  generating a message; lifecycle events select phrases. No
   host restart or global shell configuration mutation is part of ordinary use.
 
 ## Acceptance and verification

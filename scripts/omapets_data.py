@@ -87,6 +87,7 @@ def discover_profile_homes(hermes_root, active_home=None):
 
 CATEGORIES = (
     "thinking",
+    "working",
     "waiting_on_you",
     "waiting_on_task",
     "yes",
