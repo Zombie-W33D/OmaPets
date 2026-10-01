@@ -119,6 +119,7 @@ def build_snapshot(hermes_root, defaults_home):
         item = {
             "id": profile_id, "enabled": config["enabled"],
             "petId": config["petId"], "mode": config["mode"],
+            "speed": config["speed"],
             "screen": config["screen"], "position": config["position"],
             "scale": config["scale"], "pet": None, "error": error,
         }

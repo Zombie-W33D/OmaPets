@@ -114,6 +114,16 @@ BarWidget {
               }
             }
           }
+          Button {
+            text: "Wander speed: " + (profileRow.modelData.speed || "slow")
+            foreground: root.bar ? root.bar.foreground : Color.foreground
+            enabled: !!root.petService && profileRow.modelData.mode === "wander"
+            onClicked: {
+              var speeds = ["slow", "normal", "brisk"]
+              var current = speeds.indexOf(profileRow.modelData.speed)
+              root.petService.configure(profileRow.modelData.id, "speed", speeds[(current + 1) % speeds.length])
+            }
+          }
           Text {
             visible: profileRow.modelData.error !== ""
             text: profileRow.modelData.error
@@ -125,7 +135,7 @@ BarWidget {
         }
       }
       Text {
-        text: "Drag a visible pet to set its position. Settings stay per agent."
+        text: "Drag a pet and release to let it fall. Settings stay per agent."
         textFormat: Text.PlainText
         width: parent.width
         wrapMode: Text.Wrap

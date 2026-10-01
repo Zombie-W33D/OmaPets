@@ -104,6 +104,7 @@ def default_config():
         "enabled": False,
         "petId": "",
         "mode": "stay",
+        "speed": "slow",
         "screen": "",
         "position": {"x": 0.85, "y": 0.9},
         "scale": 3,
@@ -152,6 +153,8 @@ def validate_config(config):
         raise ValueError("petId must be a safe package id or empty")
     if result["mode"] not in ("stay", "wander"):
         raise ValueError("mode must be stay or wander")
+    if result["speed"] not in ("slow", "normal", "brisk"):
+        raise ValueError("speed must be slow, normal or brisk")
     screen = result["screen"]
     if not isinstance(screen, str) or len(screen) > 64 or any(ord(char) < 32 for char in screen):
         raise ValueError("screen must be a short plain-text name")

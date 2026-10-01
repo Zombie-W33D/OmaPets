@@ -36,6 +36,15 @@ class CliTests(unittest.TestCase):
         self.assertNotEqual(self.invoke("set", "not-real", "enabled", "true").returncode, 0)
         self.assertFalse((self.root / "profiles" / "not-real" / "omapets").exists())
 
+    def test_speed_setting_round_trips_through_cli_and_snapshot(self):
+        target = self.root / "profiles" / "aria"
+        target.mkdir(parents=True)
+        (target / "config.yaml").write_text("name: aria\n")
+        self.assertEqual(self.invoke("set", "aria", "speed", "brisk").returncode, 0)
+        self.assertEqual(json.loads(self.invoke("snapshot").stdout)["profiles"][1]["speed"], "brisk")
+        self.assertNotEqual(self.invoke("set", "aria", "speed", "turbo").returncode, 0)
+        self.assertEqual(json.loads(self.invoke("snapshot").stdout)["profiles"][1]["speed"], "brisk")
+
     def test_enable_without_character_refuses_to_create_config(self):
         result = self.invoke("set", "default", "enabled", "true")
         self.assertNotEqual(result.returncode, 0)

@@ -67,6 +67,14 @@ class AgentConfigTests(unittest.TestCase):
 
         self.assertFalse(default_config()["enabled"])
 
+    def test_speed_presets_are_bounded_and_older_configs_default_to_slow(self):
+        from scripts.omapets_data import default_config, validate_config
+        self.assertEqual(default_config()["speed"], "slow")
+        self.assertEqual(validate_config({"schemaVersion": 1})["speed"], "slow")
+        self.assertEqual(validate_config({"speed": "brisk"})["speed"], "brisk")
+        with self.assertRaises(ValueError):
+            validate_config({"speed": "instant"})
+
     def test_phrase_links_must_be_safe_relative_markdown_paths(self):
         from scripts.omapets_data import default_config, validate_config
 

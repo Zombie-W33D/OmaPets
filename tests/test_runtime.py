@@ -34,7 +34,7 @@ class RuntimeTests(unittest.TestCase):
         snapshot = build_snapshot(self.root, self.defaults)
         self.assertEqual(snapshot["petIds"], ["socksy"])
         self.assertEqual(snapshot["profiles"], [{"id": "default", "enabled": False,
-                                               "petId": "", "mode": "stay", "screen": "",
+                                               "petId": "", "mode": "stay", "speed": "slow", "screen": "",
                                                "position": {"x": 0.85, "y": 0.9}, "scale": 3,
                                                "pet": None, "error": ""}])
 

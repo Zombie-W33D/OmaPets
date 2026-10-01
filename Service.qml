@@ -81,7 +81,7 @@ Item {
   // config; CLI revalidates both the profile and all requested fields.
   function configure(id, field, value) {
     if (settingsProcess.running || root.refreshing || !root.profileById(id)) return false
-    if (["enabled", "mode", "petId", "position", "scale", "screen"].indexOf(field) === -1) return false
+    if (["enabled", "mode", "speed", "petId", "position", "scale", "screen"].indexOf(field) === -1) return false
     settingsProcess.command = ["/usr/bin/python3", "-I", root.helperPath,
                                "set", id, field, String(value)]
     root.lastError = ""

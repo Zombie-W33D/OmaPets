@@ -2,8 +2,8 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.1`
-**Status:** Portable runtime and bridge checks pass; live Omarchy lifecycle is unverified.
+**Preview version:** `0.1.0-alpha.2`
+**Status:** Portable runtime and bridge checks pass; gravity/movement changes await a focused live check.
 
 ## User outcome
 
@@ -92,7 +92,9 @@ back to Hermes.
 - Service refreshes are serialized and generation-guarded so stale helper
   completions cannot re-enable a disabled pet or overwrite newer settings.
 - The pet's layer surface is transparent, top-layer and click-through outside
-  its hit region. Position is per profile; stay/wander controls movement. No
+  its hit region. Pets fall to the monitor floor and bounce to a stop; stay/wander
+  controls horizontal movement with per-profile speed presets. Position is per
+  profile, including the release height for the next reload. No
   host restart or global shell configuration mutation is part of ordinary use.
 
 ## Acceptance and verification
@@ -106,9 +108,9 @@ back to Hermes.
    fixture tests pass.
 4. Live checks, when authorized, cover hosted service loading, profile
    discovery, click-through/drag, animation, IPC, disablement and removal.
-   No live install/enable/restart will be performed during this task because
-   the user's chat/music must remain undisturbed. Report those checks as
-   unrun—not passed.
+   The base alpha.1 plugin has been installed and observed on this desktop;
+   new gravity behavior still needs an updated-plugin smoke test. Do not
+   restart unrelated chat or music services. Report unrun checks honestly.
 5. Versioned conventional commits are pushed to a private GitHub repository
    named `OmaPets`. A tag is not a substitute for the unavailable live-surface
    evidence and must be described accordingly.

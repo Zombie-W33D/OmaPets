@@ -23,7 +23,7 @@ def run(argv=None):
     subcommands.add_parser("snapshot")
     setter = subcommands.add_parser("set")
     setter.add_argument("profile")
-    setter.add_argument("field", choices=("enabled", "petId", "mode", "position", "screen", "scale"))
+    setter.add_argument("field", choices=("enabled", "petId", "mode", "speed", "position", "screen", "scale"))
     setter.add_argument("value")
     args = parser.parse_args(argv)
 
@@ -53,6 +53,8 @@ def run(argv=None):
             config["petId"] = value
         elif args.field == "mode":
             config["mode"] = value
+        elif args.field == "speed":
+            config["speed"] = value
         elif args.field == "position":
             try:
                 x, y = value.split(",")

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import "Motion.js" as Motion
 
 // Omagatchi-style transparent, fixed full-monitor layer surface. Only the
 // sprite accepts input; a press temporarily expands the region for reliable
@@ -39,13 +40,16 @@ PanelWindow {
   readonly property real pixelHeight: profile && profile.pet
     ? Math.max(40, Math.round(profile.pet.frameHeight * profile.scale / 4)) : 52
   readonly property string category: activity && activity.category ? activity.category : "idle"
-  readonly property var animation: profile && profile.animations && profile.animations[category]
+  readonly property var animation: airborne
+    ? Motion.airborneAnimation(profile && profile.pet ? profile.pet.rows : 0)
+    : profile && profile.animations && profile.animations[category]
     ? profile.animations[category]
     : (walking && category === "idle"
        ? ({ row: facingLeft ? 2 : 1, frames: 8 }) : ({ row: 0, frames: 6 }))
   property int frame: 0
   onCategoryChanged: { frame = 0; frameTick.restart() }
   onWalkingChanged: frame = 0
+  onAirborneChanged: frame = 0
 
   // The profile's x/y are normalized to its monitor, independent of scale.
   property real dragX: -1
@@ -54,43 +58,81 @@ PanelWindow {
     ? Math.max(0, Math.min(width - pixelWidth, profile.position.x * width)) : 0
   readonly property real startY: profile && height > 0
     ? Math.max(0, Math.min(height - pixelHeight, profile.position.y * height)) : 0
+  readonly property real groundY: Math.max(0, height - pixelHeight)
+  property real fallY: -1
+  property real velocityY: 0
+  readonly property bool grounded: fallY >= 0 && fallY >= groundY && velocityY === 0
+  readonly property bool airborne: fallY >= 0 && !grounded && !grabArea.pressed
   readonly property real petX: dragX >= 0 ? dragX
     : (profile && profile.mode === "wander" && roamX >= 0 ? roamX : startX)
-  readonly property real petY: dragY >= 0 ? dragY : startY
+  readonly property real petY: dragY >= 0 ? dragY : (fallY >= 0 ? fallY : startY)
   property real roamX: -1
   property bool walking: false
   property bool facingLeft: false
   property bool infoVisible: false
 
+  function resetPhysics() {
+    velocityY = 0
+    fallY = profile && profile.pet && height > 0 ? Math.min(startY, groundY) : -1
+  }
+
   onProfileChanged: {
     dragX = -1
     dragY = -1
     roamX = -1
+    walking = false
+    walkDuration.stop()
+    Qt.callLater(root.resetPhysics)
+  }
+  onHeightChanged: if (profile && profile.pet && fallY < 0) root.resetPhysics()
+  onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
+
+  // Adapted from OpenPets: gravity gains 2.2px per 16ms, caps at 48px and
+  // bounces with damping. No physics ticks after a pet settles on the floor.
+  Timer {
+    interval: 16
+    repeat: true
+    running: root.visible && root.fallY >= 0 && !root.grounded && !grabArea.pressed
+    onTriggered: {
+      var next = Motion.gravityStep(root.fallY, root.velocityY, root.groundY, 0.4)
+      root.fallY = next.y
+      root.velocityY = next.vy
+    }
+  }
+
+  function startRoam() {
+    var current = root.roamX >= 0 ? root.roamX : sprite.x
+    var direction = Math.random() < 0.5 ? -1 : 1
+    var next = Motion.wanderTarget(current, root.width, root.pixelWidth, direction)
+    if (next === current) return
+    root.facingLeft = next < current
+    root.roamX = next
+    root.walking = true
+    walkDuration.restart()
   }
   Timer {
-    interval: 9000
+    interval: 400
+    running: root.visible && root.grounded && root.profile
+      && root.profile.mode === "wander" && !grabArea.pressed
+    onTriggered: root.startRoam()
+  }
+  Timer {
+    interval: 10000
     repeat: true
-    running: root.visible && root.profile && root.profile.mode === "wander" && !grabArea.pressed
-    onTriggered: {
-      var current = root.roamX >= 0 ? root.roamX : root.startX
-      var direction = Math.random() < 0.5 ? -1 : 1
-      var next = Math.max(0, Math.min(root.width - root.pixelWidth,
-                                      current + direction * (root.pixelWidth * (1 + Math.random() * 2))))
-      root.facingLeft = next < current
-      root.roamX = next
-      root.walking = true
-      walkDuration.restart()
-    }
+    running: root.visible && root.grounded && root.profile
+      && root.profile.mode === "wander" && !grabArea.pressed
+    onTriggered: root.startRoam()
   }
   Timer {
     id: walkDuration
-    interval: 3500
+    interval: Motion.speedDuration(root.profile ? root.profile.speed : "slow")
     onTriggered: root.walking = false
   }
 
   Timer {
     id: frameTick
-    interval: root.category === "idle" ? 900 : 180
+    interval: root.airborne ? 168 : (root.walking && root.category === "idle" ? 132
+      : (root.category === "idle" ? 900 : 180))
     repeat: true
     running: root.visible
     onTriggered: root.frame = (root.frame + 1) % Math.max(1, root.animation.frames)
@@ -110,7 +152,10 @@ PanelWindow {
     clip: true
     Behavior on x {
       enabled: root.profile && root.profile.mode === "wander" && !grabArea.pressed
-      NumberAnimation { duration: 3500; easing.type: Easing.InOutQuad }
+      NumberAnimation {
+        duration: Motion.speedDuration(root.profile ? root.profile.speed : "slow")
+        easing.type: Easing.InOutQuad
+      }
     }
 
     Image {
@@ -138,6 +183,8 @@ PanelWindow {
       property bool dragged: false
 
       onPressed: function(mouse) {
+        walkDuration.stop()
+        root.walking = false
         var point = mapToItem(root.contentItem, mouse.x, mouse.y)
         pressX = point.x
         pressY = point.y
@@ -154,9 +201,12 @@ PanelWindow {
         root.dragY = Math.max(0, Math.min(root.height - sprite.height, point.y - offsetY))
       }
       onReleased: {
-        if (dragged && root.width > 0 && root.height > 0)
-          root.positionRequested(root.petX / root.width, root.petY / root.height)
-        else {
+        if (dragged && root.width > 0 && root.height > 0) {
+          root.fallY = root.dragY
+          root.velocityY = 0
+          root.dragY = -1
+          root.positionRequested(root.petX / root.width, root.fallY / root.height)
+        } else {
           root.infoVisible = true
           infoTimeout.restart()
         }

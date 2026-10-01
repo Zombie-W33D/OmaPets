@@ -2,9 +2,9 @@
 
 [![Built for Omarchy: Plugin](https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg)](https://github.com/tcballard/omarchy-badges)
 
-OpenPets characters as per-agent desktop companions in the Omarchy Quattro shell. **Development preview (`0.1.0-alpha.1`): portable checks pass; live shell behavior has not yet been verified.** No pet is shown until you enable that profile.
+OpenPets characters as per-agent desktop companions in the Omarchy Quattro shell. **Development preview (`0.1.0-alpha.2`): portable checks pass; gravity and speed behavior need live verification.** No pet is shown until you enable that profile.
 
-The hosted Quickshell service owns independent, transparent, click-through layer surfaces; the bar widget lets you show/hide pets, choose the next installed character, and switch stay/wander. Drag a pet to save its monitor-relative position. A separate, optional Hermes plugin sends lifecycle events without forwarding chat content or starting another model call. No audio is played.
+The hosted Quickshell service owns independent, transparent, click-through layer surfaces; the bar widget lets you show/hide pets, choose the next installed character, and switch stay/wander. Pets fall to the bottom of their selected monitor with a damped bounce; drag one up and release it to fall again. Wander uses OpenPets-style 120px steps with slow/normal/brisk speed presets. A separate, optional Hermes plugin sends lifecycle events without forwarding chat content or starting another model call. No audio is played.
 
 ## Requirements
 
@@ -23,7 +23,7 @@ omarchy plugin add git@github.com:Zombie-W33D/OmaPets.git --enable
 
 The Hermes bridge is optional and installed **per Hermes home/profile**. Copy the two files from this checkout's `hermes-plugin/` into `<profile-home>/plugins/omapets-hermes/` (for example, `~/.hermes/profiles/aria/plugins/omapets-hermes/`). Review and validate with `hermes plugins doctor <destination> --ci`, then enable that plugin for the profile using the Hermes plugin manager. Until enabled, OmaPets can still display idle pets; you can send explicit events through Omarchy IPC.
 
-This project was developed without installing or enabling either plugin in the running chat/music session. Desktop lifecycle and click-through are **unverified**; do not treat this preview as a release.
+The base Omarchy plugin has been installed and rendered on the user's desktop; the new gravity behavior still requires a focused live check. The Hermes bridge is not enabled in the running chat session. This preview is not a release.
 
 ## One agent's config folder and custom phrases
 
@@ -44,6 +44,7 @@ Example `config.json` for that agent:
   "enabled": true,
   "petId": "socksy",
   "mode": "stay",
+  "speed": "slow",
   "screen": "",
   "position": {"x": 0.85, "y": 0.9},
   "scale": 3,
@@ -67,6 +68,8 @@ Link only categories you want to customize. An **unlinked** category reads the m
 
 You can override animations for the same categories using OpenPets row names: `idle`, `running-right`, `running-left`, `waving`, `jumping`, `failed`, `waiting`, `running`, or `review`. Unknown mappings fall back to `idle`. `success` means something worked; `finished` means a turn ended. **Yes/no/success are explicit signals, never guessed from an answer's words.** The optional Hermes bridge offers `omapets_signal(category)` with `yes`, `no`, or `success`; built-in lifecycle hooks handle the other states.
 
+OpenPets V1/V2 atlases have no separate falling row, so an airborne pet uses the standard jumping row and returns to its configured/idle animation after landing. Gravity uses OpenPets' 16ms step, bounded acceleration and damped bounce. The `speed` field accepts `slow` (1800ms), `normal` (1100ms), or `brisk` (600ms) per wander step; the bar cycles these presets. Older configs without `speed` default to `slow`. Physics and movement constants are adapted from [OpenPets' motion engine](https://github.com/OpenPetsHQ/openpets/blob/2d14120cf027c9e80db7ff78e60711be08d39df4/apps/desktop/src/pet-motion-engine.ts) and [walkabout plugin](https://github.com/OpenPetsHQ/openpets/blob/2d14120cf027c9e80db7ff78e60711be08d39df4/plugins/community/openpets.walkabout/index.js) (MIT), without using an Electron pet window or another Quickshell process.
+
 Profile settings and custom phrase files remain on disk if either plugin is removed. OmaPets never modifies the OpenPets package.
 
 ## Development and maintenance
@@ -74,12 +77,12 @@ Profile settings and custom phrase files remain on disk if either plugin is remo
 ```bash
 ./tests/run
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/model.test.js
+node --test tests/*.test.js
 hermes plugins doctor ./hermes-plugin --ci
 omarchy plugin validate .
 ```
 
-`omarchy plugin update io.github.zombie-w33d.omapets` updates a Git-managed installation; `omarchy plugin remove io.github.zombie-w33d.omapets` removes the shell plugin, not your profile config. Hermes bridge removal is managed independently per profile. See `DEVELOPMENT.md` for current limitations and validation scope. An Omarchy restart, live enable/disable, monitor unplug, and clean install/removal still need a safe test window.
+`omarchy plugin update io.github.zombie-w33d.omapets` updates a Git-managed installation; `omarchy plugin remove io.github.zombie-w33d.omapets` removes the shell plugin, not your profile config. Hermes bridge removal is managed independently per profile. See `DEVELOPMENT.md` for current limitations and validation scope. An Omarchy restart, monitor unplug, and clean install/removal still need a safe test window.
 
 ## Attribution and license
 
