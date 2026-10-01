@@ -71,6 +71,10 @@ class RuntimeTests(unittest.TestCase):
         self.assertTrue(all(isinstance(line, str) and line for line in snapshot["phrases"]["working"]))
         self.assertEqual(snapshot["animations"]["working"], {"row": 8, "frames": 6})
 
+    def test_waiting_on_user_uses_wave_row(self):
+        self.assertEqual(resolve_animation("waiting_on_you", {}), (3, 4))
+        self.assertEqual(resolve_animation("waiting_on_task", {}), (6, 6))
+
     def test_missing_config_lists_disabled_profile_without_render_asset(self):
         self.add_pet()
         snapshot = build_snapshot(self.root, self.defaults)

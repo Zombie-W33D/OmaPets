@@ -46,14 +46,17 @@ PanelWindow {
     ? Motion.heldAnimation(profile && profile.pet ? profile.pet.rows : 0,
                            profile && profile.pet ? profile.pet.columns : 0)
     : airborne ? Motion.airborneAnimation(profile && profile.pet ? profile.pet.rows : 0)
+    : category === "waiting_on_you" && !waitingWave ? ({ row: 0, frames: 6 })
     : profile && profile.animations && profile.animations[category]
     ? profile.animations[category]
     : (walking && category === "idle"
        ? ({ row: facingLeft ? 2 : 1, frames: 8 }) : ({ row: 0, frames: 6 }))
   property int frame: 0
   property int heldPhase: 0
+  property bool waitingWave: false
   property real lastPointerMotionMs: -1
-  onCategoryChanged: { frame = 0; frameTick.restart() }
+  onCategoryChanged: { waitingWave = false; waitingWaveDuration.stop(); frame = 0; frameTick.restart() }
+  onWaitingWaveChanged: { frame = 0; frameTick.restart() }
   onWalkingChanged: frame = 0
   onAirborneChanged: frame = 0
 
@@ -186,6 +189,19 @@ PanelWindow {
     onTriggered: root.walking = false
   }
 
+  Timer {
+    id: waitingWaveInterval
+    interval: 4000
+    repeat: true
+    running: root.visible && root.category === "waiting_on_you" && !grabArea.pressed
+    onTriggered: { root.waitingWave = true; waitingWaveDuration.restart() }
+    onRunningChanged: if (!running) { root.waitingWave = false; waitingWaveDuration.stop() }
+  }
+  Timer {
+    id: waitingWaveDuration
+    interval: 800
+    onTriggered: root.waitingWave = false
+  }
   Timer {
     id: frameTick
     interval: grabArea.pressed ? 140 : Motion.frameInterval(root.airborne, root.walking, root.category)

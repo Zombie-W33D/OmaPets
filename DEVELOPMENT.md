@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.12`
+**Preview version:** `0.1.0-alpha.13`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -60,7 +60,7 @@ Initial animation suggestions (all fall back to `idle` when unavailable):
 | --- | --- |
 | thinking | review |
 | working | review (bottom/9th atlas row) |
-| waiting_on_you | waiting |
+| waiting_on_you | waving briefly every four seconds; idle between waves |
 | waiting_on_task | waiting |
 | yes | waving |
 | no | failed |

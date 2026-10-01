@@ -27,7 +27,7 @@ ANIMATION_ROWS = {
     "waiting": (6, 6), "running": (7, 6), "review": (8, 6),
 }
 DEFAULT_ANIMATIONS = {
-    "thinking": "review", "working": "review", "waiting_on_you": "waiting",
+    "thinking": "review", "working": "review", "waiting_on_you": "waving",
     "waiting_on_task": "waiting", "yes": "waving", "no": "failed",
     "success": "jumping", "finished": "idle", "failed": "failed",
 }

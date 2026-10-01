@@ -259,6 +259,14 @@ test('left click only toggles the above-pet card while state events own the spee
   assert.doesNotMatch(windowSource, /root\.infoVisible && root\.profile \? root\.profile\.id/);
 });
 
+test('waiting on the user waves briefly then rests between waves', () => {
+  assert.match(windowSource, /property bool waitingWave: false/);
+  assert.match(windowSource, /category === "waiting_on_you" && !waitingWave[\s\S]*\{ row: 0, frames: 6 \}/);
+  assert.match(windowSource, /id: waitingWaveInterval[\s\S]*interval: 4000[\s\S]*running: root\.visible && root\.category === "waiting_on_you"[\s\S]*root\.waitingWave = true/);
+  assert.match(windowSource, /id: waitingWaveDuration[\s\S]*interval: 800[\s\S]*root\.waitingWave = false/);
+  assert.match(windowSource, /onCategoryChanged: \{[^}]*waitingWave = false/);
+});
+
 test('the hosted pet uses row five and moving or resting frames while held', () => {
   assert.match(windowSource, /readonly property var animation: grabArea\.pressed\s*\? Motion\.heldAnimation\(/);
   assert.match(windowSource, /interval: grabArea\.pressed \? 140 : Motion\.frameInterval/);
