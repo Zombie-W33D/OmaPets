@@ -61,7 +61,7 @@ class RuntimeTests(unittest.TestCase):
                 self.assertGreaterEqual(len(snapshot["phrases"][state]), 3)
                 self.assertGreaterEqual(snapshot["animations"][state]["frames"], 1)
 
-    def test_working_default_has_plausible_phrases_and_a_running_animation(self):
+    def test_working_default_has_plausible_phrases_and_bottom_row_animation(self):
         self.add_pet()
         config = default_config()
         config.update(enabled=True, petId="socksy")
@@ -69,7 +69,7 @@ class RuntimeTests(unittest.TestCase):
         snapshot = build_snapshot(self.root, self.defaults)["profiles"][0]
         self.assertGreaterEqual(len(snapshot["phrases"]["working"]), 3)
         self.assertTrue(all(isinstance(line, str) and line for line in snapshot["phrases"]["working"]))
-        self.assertEqual(snapshot["animations"]["working"], {"row": 7, "frames": 6})
+        self.assertEqual(snapshot["animations"]["working"], {"row": 8, "frames": 6})
 
     def test_missing_config_lists_disabled_profile_without_render_asset(self):
         self.add_pet()

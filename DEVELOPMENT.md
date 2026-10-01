@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.11`
+**Preview version:** `0.1.0-alpha.12`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -59,7 +59,7 @@ Initial animation suggestions (all fall back to `idle` when unavailable):
 | Signal | OpenPets animation |
 | --- | --- |
 | thinking | review |
-| working | running |
+| working | review (bottom/9th atlas row) |
 | waiting_on_you | waiting |
 | waiting_on_task | waiting |
 | yes | waving |
