@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.4`
+**Preview version:** `0.1.0-alpha.5`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -94,8 +94,10 @@ back to Hermes.
 - The pet's layer surface is transparent, top-layer and click-through outside
   its hit region. Pets drop from the top at their per-profile horizontal position,
   then bounce to a stop on the monitor floor; stay/wander controls horizontal
-  movement with per-profile speed presets. Drag release starts a new fall at the
-  release height; a new appearance starts at the top. No
+  movement with per-profile speed presets. Drag release retains the exact
+  release position and applies bounded pointer-derived velocity for a short arc;
+  a same-pet settings refresh does not restart that fall. New appearances start
+  at the top. No
   host restart or global shell configuration mutation is part of ordinary use.
 
 ## Acceptance and verification

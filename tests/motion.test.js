@@ -22,6 +22,66 @@ test('horizontal easing remains disabled until the pet lands', () => {
   assert.match(windowSource, /Behavior on x\s*\{\s*enabled:\s*root\.grounded\s*&&\s*root\.profile\s*&&\s*root\.profile\.mode\s*===\s*"wander"/);
 });
 
+test('a position write keeps the same visible pet identity', () => {
+  const original = { id: 'codedump', petId: 'krang-box', screen: 'DP-1', position: { x: 0.5, y: 0.3 } };
+  const moved = { ...original, position: { x: 0.8, y: 0.1 }, mode: 'stay' };
+  assert.equal(motion.petIdentity(original), motion.petIdentity(moved));
+  assert.notEqual(motion.petIdentity(original), motion.petIdentity({ ...original, petId: 'socksy' }));
+  assert.notEqual(motion.petIdentity(original), motion.petIdentity({ ...original, screen: 'DP-2' }));
+  assert.equal(motion.petIdentity(null), '');
+});
+
+test('same-pet settings refresh does not restart a toss at the top', () => {
+  const handler = windowSource.split('onProfileChanged: {')[1]?.split('onHeightChanged:')[0] || '';
+  assert.match(handler, /var nextKey = Motion\.petIdentity\(profile\)/);
+  assert.match(handler, /if \(nextKey !== renderedPetKey\) \{[\s\S]*Qt\.callLater\(root\.resetPhysics\)/);
+});
+
+test('release uses actual cursor location and momentum instead of snapping to saved placement', () => {
+  const release = windowSource.split('onReleased: function(mouse) {')[1]?.split('onCanceled:')[0] || '';
+  assert.match(release, /root\.dragX = Math\.max\(0, Math\.min\(root\.width - sprite\.width, point\.x - offsetX\)\)/);
+  assert.match(release, /root\.dragY = Math\.max\(0, Math\.min\(root\.height - sprite\.height, point\.y - offsetY\)\)/);
+  assert.match(release, /Motion\.releaseVelocity\(pointerSamples, point\.x, point\.y, Date\.now\(\)\)/);
+  assert.match(release, /root\.roamX = root\.dragX/);
+  assert.match(release, /root\.fallY = root\.dragY/);
+  assert.match(release, /root\.velocityX = velocity\.vx/);
+  assert.match(release, /root\.velocityY = velocity\.vy/);
+  assert.match(release, /root\.dragX = -1/);
+});
+
+test('a recent pointer swipe gives a bounded gentle release velocity', () => {
+  const samples = [{ x: 100, y: 200, t: 1000 }, { x: 140, y: 180, t: 1040 }];
+  const velocity = motion.releaseVelocity(samples, 150, 175, 1050);
+  assert.equal(velocity.vx, 8);
+  assert.equal(velocity.vy, -4);
+  const paused = motion.releaseVelocity(samples, 150, 175, 1201);
+  assert.equal(paused.vx, 0);
+  assert.equal(paused.vy, 0);
+  const fast = motion.releaseVelocity([{ x: 0, y: 0, t: 1000 }], 2000, -2000, 1001);
+  assert.equal(fast.vx, 10);
+  assert.equal(fast.vy, -12);
+});
+
+test('airborne horizontal momentum makes a short arc and stops at screen edges', () => {
+  const step = motion.horizontalStep(200, 8, 1000, 100);
+  assert.equal(step.x, 208);
+  assert.ok(Math.abs(step.vx - 7.36) < 1e-9);
+  const edge = motion.horizontalStep(895, 10, 1000, 100);
+  assert.equal(edge.x, 900);
+  assert.equal(edge.vx, 0);
+  const stopped = motion.horizontalStep(200, 0.1, 1000, 100);
+  assert.equal(stopped.x, 200);
+  assert.equal(stopped.vx, 0);
+});
+
+test('the fall timer moves horizontally while airborne and stops momentum on landing', () => {
+  const fallTick = windowSource.split('running: root.visible && root.fallY >= 0')[1]?.split('function startRoam()')[0] || '';
+  assert.match(fallTick, /Motion\.horizontalStep\(root\.roamX >= 0 \? root\.roamX : root\.petX, root\.velocityX, root\.width, root\.pixelWidth\)/);
+  assert.match(fallTick, /root\.roamX = lateral\.x/);
+  assert.match(fallTick, /root\.velocityX = lateral\.vx/);
+  assert.match(fallTick, /if \(root\.grounded\) root\.velocityX = 0/);
+});
+
 test('gravity accelerates, caps velocity and settles at the sprite-height floor', () => {
   let state = motion.gravityStep(100, 0, 700, 0);
   assert.equal(state.y, 101.1);
@@ -37,6 +97,14 @@ test('gravity accelerates, caps velocity and settles at the sprite-height floor'
   const settled = motion.gravityStep(state.y, state.vy, 700, 0);
   assert.equal(settled.y, state.y);
   assert.equal(settled.vy, state.vy);
+});
+
+test('an upward throw meets the top edge and then falls back down', () => {
+  const top = motion.gravityStep(2, -8, 700, 0.4);
+  assert.equal(top.y, 0);
+  assert.equal(top.vy, 0);
+  const next = motion.gravityStep(top.y, top.vy, 700, 0.4);
+  assert.ok(next.y > 0);
 });
 
 test('bounce loses energy, then settles with no floor jitter', () => {

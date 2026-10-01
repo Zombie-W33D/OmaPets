@@ -61,17 +61,20 @@ PanelWindow {
   readonly property real groundY: Math.max(0, height - pixelHeight)
   property real fallY: -1
   property real velocityY: 0
+  property real velocityX: 0
   readonly property bool grounded: fallY >= 0 && fallY >= groundY && velocityY === 0
   readonly property bool airborne: fallY >= 0 && !grounded && !grabArea.pressed
   readonly property real petX: dragX >= 0 ? dragX
-    : (profile && profile.mode === "wander" && roamX >= 0 ? roamX : startX)
+    : (roamX >= 0 ? roamX : startX)
   readonly property real petY: dragY >= 0 ? dragY : (fallY >= 0 ? fallY : 0)
   property real roamX: -1
+  property string renderedPetKey: ""
   property bool walking: false
   property bool facingLeft: false
   property bool infoVisible: false
 
   function resetPhysics() {
+    velocityX = 0
     velocityY = 0
     fallY = profile && profile.pet && height > 0 ? 0 : -1
   }
@@ -83,12 +86,17 @@ PanelWindow {
   onVisibleChanged: if (visible && fallY < 0) root.resetPhysics()
 
   onProfileChanged: {
-    dragX = -1
-    dragY = -1
-    roamX = -1
-    walking = false
-    walkDuration.stop()
-    Qt.callLater(root.resetPhysics)
+    var nextKey = Motion.petIdentity(profile)
+    if (nextKey !== renderedPetKey) {
+      renderedPetKey = nextKey
+      dragX = -1
+      dragY = -1
+      roamX = -1
+      velocityX = 0
+      walking = false
+      walkDuration.stop()
+      Qt.callLater(root.resetPhysics)
+    }
   }
   onHeightChanged: if (profile && profile.pet && fallY < 0) root.resetPhysics()
   onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
@@ -100,9 +108,15 @@ PanelWindow {
     repeat: true
     running: root.visible && root.fallY >= 0 && !root.grounded && !grabArea.pressed
     onTriggered: {
+      if (root.velocityX !== 0) {
+        var lateral = Motion.horizontalStep(root.roamX >= 0 ? root.roamX : root.petX, root.velocityX, root.width, root.pixelWidth)
+        root.roamX = lateral.x
+        root.velocityX = lateral.vx
+      }
       var next = Motion.gravityStep(root.fallY, root.velocityY, root.groundY, 0.4)
-      root.fallY = next.y
       root.velocityY = next.vy
+      root.fallY = next.y
+      if (root.grounded) root.velocityX = 0
     }
   }
 
@@ -186,6 +200,7 @@ PanelWindow {
       property real offsetX: 0
       property real offsetY: 0
       property bool dragged: false
+      property var pointerSamples: []
 
       onPressed: function(mouse) {
         walkDuration.stop()
@@ -196,6 +211,7 @@ PanelWindow {
         offsetX = point.x - sprite.x
         offsetY = point.y - sprite.y
         dragged = false
+        pointerSamples = [{ x: point.x, y: point.y, t: Date.now() }]
       }
       onPositionChanged: function(mouse) {
         if (!pressed) return
@@ -204,21 +220,31 @@ PanelWindow {
         dragged = true
         root.dragX = Math.max(0, Math.min(root.width - sprite.width, point.x - offsetX))
         root.dragY = Math.max(0, Math.min(root.height - sprite.height, point.y - offsetY))
+        pointerSamples = pointerSamples.slice(-7).concat([{ x: point.x, y: point.y, t: Date.now() }])
       }
-      onReleased: {
+      onReleased: function(mouse) {
         if (dragged && root.width > 0 && root.height > 0) {
+          var point = mapToItem(root.contentItem, mouse.x, mouse.y)
+          root.dragX = Math.max(0, Math.min(root.width - sprite.width, point.x - offsetX))
+          root.dragY = Math.max(0, Math.min(root.height - sprite.height, point.y - offsetY))
+          var velocity = Motion.releaseVelocity(pointerSamples, point.x, point.y, Date.now())
+          root.roamX = root.dragX
           root.fallY = root.dragY
-          root.velocityY = 0
+          root.velocityX = velocity.vx
+          root.velocityY = velocity.vy
+          root.dragX = -1
           root.dragY = -1
-          root.positionRequested(root.petX / root.width, root.fallY / root.height)
+          root.positionRequested(root.roamX / root.width, root.fallY / root.height)
         } else {
           root.infoVisible = true
           infoTimeout.restart()
         }
         dragged = false
+        pointerSamples = []
       }
       onCanceled: {
         dragged = false
+        pointerSamples = []
         root.dragX = -1
         root.dragY = -1
       }

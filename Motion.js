@@ -16,12 +16,50 @@ function gravityStep(y, vy, floor, bounce) {
   var elasticity = Number.isFinite(bounce) ? Math.max(0, Math.min(1, bounce)) : 0.4
   velocity = Math.min(velocity + GRAVITY_PER_TICK, MAX_FALL_SPEED)
   position += velocity
+  if (position < 0) {
+    position = 0
+    velocity = 0
+  }
   if (position >= ground) {
     position = ground
     velocity = Math.abs(velocity) > BOUNCE_THRESHOLD && elasticity > 0
       ? -velocity * elasticity : 0
   }
   return { y: position, vy: velocity }
+}
+
+function petIdentity(profile) {
+  if (!profile || !profile.id || !profile.petId) return ""
+  return JSON.stringify([profile.id, profile.petId, profile.screen || ""])
+}
+
+function releaseVelocity(samples, x, y, now) {
+  var zero = { vx: 0, vy: 0 }
+  if (!Array.isArray(samples) || !Number.isFinite(x) || !Number.isFinite(y)
+      || !Number.isFinite(now)) return zero
+  var oldest = null
+  for (var i = 0; i < samples.length; i++) {
+    var sample = samples[i]
+    if (!sample || !Number.isFinite(sample.x) || !Number.isFinite(sample.y)
+        || !Number.isFinite(sample.t) || sample.t > now || now - sample.t > 120) continue
+    if (!oldest || sample.t < oldest.t) oldest = sample
+  }
+  if (!oldest || now <= oldest.t) return zero
+  var tickFactor = 8 / (now - oldest.t) // 50% of pointer speed over one 16ms tick
+  return {
+    vx: Math.max(-10, Math.min(10, (x - oldest.x) * tickFactor)),
+    vy: Math.max(-12, Math.min(12, (y - oldest.y) * tickFactor))
+  }
+}
+
+function horizontalStep(x, vx, width, petWidth) {
+  var right = Number.isFinite(width) && Number.isFinite(petWidth)
+    ? Math.max(0, width - petWidth) : 0
+  var current = Number.isFinite(x) ? Math.max(0, Math.min(right, x)) : 0
+  var speed = Number.isFinite(vx) ? vx : 0
+  if (Math.abs(speed) < 0.25) return { x: current, vx: 0 }
+  var next = Math.max(0, Math.min(right, current + speed))
+  return { x: next, vx: next === 0 || next === right ? 0 : speed * 0.92 }
 }
 
 function wanderTarget(x, width, petWidth, direction) {
