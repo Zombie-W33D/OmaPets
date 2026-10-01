@@ -65,7 +65,7 @@ PanelWindow {
   readonly property bool airborne: fallY >= 0 && !grounded && !grabArea.pressed
   readonly property real petX: dragX >= 0 ? dragX
     : (profile && profile.mode === "wander" && roamX >= 0 ? roamX : startX)
-  readonly property real petY: dragY >= 0 ? dragY : (fallY >= 0 ? fallY : startY)
+  readonly property real petY: dragY >= 0 ? dragY : (fallY >= 0 ? fallY : 0)
   property real roamX: -1
   property bool walking: false
   property bool facingLeft: false
@@ -73,7 +73,7 @@ PanelWindow {
 
   function resetPhysics() {
     velocityY = 0
-    fallY = profile && profile.pet && height > 0 ? Math.min(startY, groundY) : -1
+    fallY = profile && profile.pet && height > 0 ? 0 : -1
   }
 
   // A bound PetSlot may receive its initial profile before onProfileChanged
@@ -93,7 +93,7 @@ PanelWindow {
   onHeightChanged: if (profile && profile.pet && fallY < 0) root.resetPhysics()
   onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
 
-  // Adapted from OpenPets: gravity gains 2.2px per 16ms, caps at 48px and
+  // OpenPets-inspired gravity gains 1.1px per 16ms, caps at 24px and
   // bounces with damping. No physics ticks after a pet settles on the floor.
   Timer {
     interval: 16
@@ -137,8 +137,7 @@ PanelWindow {
 
   Timer {
     id: frameTick
-    interval: root.airborne ? 168 : (root.walking && root.category === "idle" ? 132
-      : (root.category === "idle" ? 900 : 180))
+    interval: Motion.frameInterval(root.airborne, root.walking, root.category)
     repeat: true
     running: root.visible
     onTriggered: root.frame = (root.frame + 1) % Math.max(1, root.animation.frames)
@@ -157,7 +156,7 @@ PanelWindow {
     y: root.petY
     clip: true
     Behavior on x {
-      enabled: root.profile && root.profile.mode === "wander" && !grabArea.pressed
+      enabled: root.grounded && root.profile && root.profile.mode === "wander" && !grabArea.pressed
       NumberAnimation {
         duration: Motion.speedDuration(root.profile ? root.profile.speed : "slow")
         easing.type: Easing.InOutQuad

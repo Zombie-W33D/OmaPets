@@ -1,11 +1,11 @@
 // Adapted from OpenPets pet-motion-engine + community walkabout (MIT),
 // source revision 2d14120cf027c9e80db7ff78e60711be08d39df4.
 // Pure functions so the hosted QML renderer and Node regression tests agree.
-var GRAVITY_PER_TICK = 2.2
-var MAX_FALL_SPEED = 48
+var GRAVITY_PER_TICK = 1.1
+var MAX_FALL_SPEED = 24
 var BOUNCE_THRESHOLD = 6
 var WANDER_DISTANCE = 120
-var SPEED_DURATION = { slow: 1800, normal: 1100, brisk: 600 }
+var SPEED_DURATION = { slow: 2250, normal: 1375, brisk: 750 }
 
 function gravityStep(y, vy, floor, bounce) {
   var ground = Number.isFinite(floor) ? Math.max(0, floor) : 0
@@ -37,6 +37,12 @@ function wanderTarget(x, width, petWidth, direction) {
 function speedDuration(speed) {
   return Object.prototype.hasOwnProperty.call(SPEED_DURATION, speed)
     ? SPEED_DURATION[speed] : SPEED_DURATION.slow
+}
+
+function frameInterval(airborne, walking, category) {
+  var original = airborne ? 168 : walking && category === "idle" ? 132
+    : category === "idle" ? 900 : 180
+  return Math.round(original / 1.2)
 }
 
 // OpenPets V1/V2 defines jumping, not a distinct falling row. An airborne
