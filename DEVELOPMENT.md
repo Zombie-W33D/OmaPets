@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.14`
+**Preview version:** `0.1.0-alpha.15`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -99,6 +99,9 @@ back to Hermes.
   release position and applies bounded pointer-derived velocity for a short arc.
   A walking pet uses its directional walking frames before any requested state
   animation, rather than sliding across the screen while apparently working.
+  Working frames play at 80% of their prior speed without slowing walking or
+  other states. Ground and window contact is 95% down the sprite frame, so the
+  visible feet align with an edge even when the atlas has bottom transparency.
   Toss gravity starts at half and recovers linearly over three seconds without
   changing ordinary drops; a same-pet settings refresh does not restart the
   toss. A held pet uses row five when available, grips at its horizontal center

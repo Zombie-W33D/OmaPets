@@ -67,7 +67,7 @@ PanelWindow {
     ? Math.max(0, Math.min(width - pixelWidth, profile.position.x * width)) : 0
   readonly property real startY: profile && height > 0
     ? Math.max(0, Math.min(height - pixelHeight, profile.position.y * height)) : 0
-  readonly property real groundY: Math.max(0, height - pixelHeight)
+  readonly property real groundY: Math.max(0, height - Motion.contactHeight(pixelHeight))
   property real fallY: -1
   property real velocityY: 0
   property real velocityX: 0
@@ -146,8 +146,8 @@ PanelWindow {
       var landing = root.velocityY >= 0
         ? Motion.landingSurface(root.fallY, next.y, root.petX, root.pixelWidth, root.pixelHeight, root.surfaces)
         : null
-      if (landing && landing.y >= root.pixelHeight)
-        next = Motion.gravityStep(root.fallY, root.velocityY, landing.y - root.pixelHeight, 0.4, gravityScale)
+      if (landing && landing.y >= Motion.contactHeight(root.pixelHeight))
+        next = Motion.gravityStep(root.fallY, root.velocityY, landing.y - Motion.contactHeight(root.pixelHeight), 0.4, gravityScale)
       root.velocityY = next.vy
       root.fallY = next.y
       root.supportY = landing && next.vy === 0 ? next.y : -1

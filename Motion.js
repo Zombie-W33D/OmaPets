@@ -6,6 +6,7 @@ var MAX_FALL_SPEED = 24
 var BOUNCE_THRESHOLD = 6
 var WANDER_DISTANCE = 120
 var SPEED_DURATION = { slow: 2250, normal: 1375, brisk: 750 }
+var CATEGORY_ANIMATION_SPEED = { working: 0.8 }
 
 function tossGravityScale(elapsedMs) {
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return 1
@@ -42,16 +43,20 @@ function validSurface(surface, x, petWidth) {
     && x + petWidth / 2 < surface.x + surface.width
 }
 
+function contactHeight(petHeight) {
+  return Number.isFinite(petHeight) && petHeight > 0 ? petHeight * 0.95 : 0
+}
 function landingSurface(fromY, toY, x, petWidth, petHeight, surfaces) {
   if (!Array.isArray(surfaces) || !Number.isFinite(fromY) || !Number.isFinite(toY)
       || !Number.isFinite(petHeight) || petHeight <= 0 || toY <= fromY) return null
+  var contact = contactHeight(petHeight)
   var hit = null
   for (var i = 0; i < surfaces.length; i++) {
     var surface = surfaces[i]
     if (!validSurface(surface, x, petWidth)) continue
-    var top = surface.y - petHeight
-    if (fromY + petHeight <= surface.y && toY + petHeight >= surface.y
-        && (!hit || top < hit.y - petHeight)) hit = surface
+    var top = surface.y - contact
+    if (fromY + contact <= surface.y && toY + contact >= surface.y
+        && (!hit || top < hit.y - contact)) hit = surface
   }
   return hit
 }
@@ -60,7 +65,7 @@ function supportAt(y, x, petWidth, petHeight, surfaces) {
   if (!Array.isArray(surfaces) || !Number.isFinite(y) || !Number.isFinite(petHeight)) return null
   for (var i = 0; i < surfaces.length; i++) {
     var surface = surfaces[i]
-    if (validSurface(surface, x, petWidth) && Math.abs(y + petHeight - surface.y) < 1)
+    if (validSurface(surface, x, petWidth) && Math.abs(y + contactHeight(petHeight) - surface.y) < 1)
       return surface
   }
   return null
@@ -126,7 +131,9 @@ function speedDuration(speed) {
 function frameInterval(airborne, walking, category) {
   var original = airborne ? 168 : walking ? 132
     : category === "idle" ? 900 : 180
-  return Math.round(original / 1.2)
+  var speed = !airborne && !walking && CATEGORY_ANIMATION_SPEED[category]
+    ? CATEGORY_ANIMATION_SPEED[category] : 1
+  return Math.round(original / 1.2 / speed)
 }
 
 function heldAnimation(rows, columns) {

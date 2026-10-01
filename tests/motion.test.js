@@ -162,7 +162,7 @@ test('invalid positions and a shrinking monitor cannot put a pet off-screen', ()
 
 test('a falling pet lands only on a crossed, overlapping window or bar top', () => {
   const surfaces = [{ x: 100, y: 300, width: 200 }, { x: 400, y: 500, width: 80 }];
-  assert.deepEqual({ ...motion.landingSurface(240, 261, 150, 40, 40, surfaces) }, { y: 300, x: 100, width: 200 });
+  assert.deepEqual({ ...motion.landingSurface(240, 263, 150, 40, 40, surfaces) }, { y: 300, x: 100, width: 200 });
   assert.equal(motion.landingSurface(270, 310, 150, 40, 40, surfaces), null);
   assert.equal(motion.landingSurface(240, 261, 60, 40, 40, surfaces), null);
   assert.equal(motion.landingSurface(240, 261, 300, 40, 40, surfaces), null);
@@ -170,11 +170,24 @@ test('a falling pet lands only on a crossed, overlapping window or bar top', () 
   assert.equal(motion.landingSurface(240, 261, 150, 40, 0, surfaces), null);
 });
 
+test('standing contact sits five percent above the sprite bottom on edges and floor', () => {
+  assert.equal(motion.contactHeight(40), 38);
+  assert.equal(motion.contactHeight(208), 197.6);
+  assert.equal(motion.contactHeight(0), 0);
+  const surface = { x: 100, y: 300, width: 200 };
+  assert.equal(motion.landingSurface(260, 263, 150, 40, 40, [surface])?.y, 300);
+  assert.equal(motion.landingSurface(260, 261, 150, 40, 40, [surface]), null);
+  assert.equal(motion.supportAt(262, 150, 40, 40, [surface])?.y, 300);
+  assert.equal(motion.supportAt(260, 150, 40, 40, [surface]), null);
+  assert.match(windowSource, /groundY: Math\.max\(0, height - Motion\.contactHeight\(pixelHeight\)\)/);
+  assert.match(windowSource, /landing\.y - Motion\.contactHeight\(root\.pixelHeight\)/);
+});
+
 test('perched pets walk within the supporting surface and fall when support disappears', () => {
   const surface = { x: 100, y: 300, width: 200 };
-  assert.equal(motion.supportAt(260, 240, 40, 40, [surface])?.x, 100);
-  assert.equal(motion.supportAt(260, 310, 40, 40, [surface]), null);
-  assert.equal(motion.supportAt(260, 240, 40, 40, []), null);
+  assert.equal(motion.supportAt(262, 240, 40, 40, [surface])?.x, 100);
+  assert.equal(motion.supportAt(262, 310, 40, 40, [surface]), null);
+  assert.equal(motion.supportAt(262, 240, 40, 40, []), null);
   assert.equal(motion.wanderOnSurface(260, 380, surface, 40), 260);
   assert.equal(motion.wanderOnSurface(120, 0, surface, 40), 100);
 });
@@ -206,6 +219,13 @@ test('sprite frames play at 120% of their former cadence', () => {
   assert.equal(motion.frameInterval(false, false, 'idle'), 750);
   assert.equal(motion.frameInterval(false, false, 'thinking'), 150);
   assert.equal(motion.frameInterval(false, true, 'working'), 110);
+});
+
+test('working plays at eighty percent speed without slowing walking or other states', () => {
+  assert.equal(motion.frameInterval(false, false, 'working'), 188);
+  assert.equal(motion.frameInterval(false, false, 'thinking'), 150);
+  assert.equal(motion.frameInterval(false, true, 'working'), 110);
+  assert.equal(motion.frameInterval(true, false, 'working'), 140);
 });
 
 test('walking animation takes precedence over a requested action', () => {
