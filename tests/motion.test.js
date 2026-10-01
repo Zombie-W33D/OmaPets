@@ -49,17 +49,17 @@ test('release uses actual cursor location and momentum instead of snapping to sa
   assert.match(release, /root\.dragX = -1/);
 });
 
-test('a recent pointer swipe gives a bounded gentle release velocity', () => {
+test('a recent pointer swipe gives a 20% stronger bounded release velocity', () => {
   const samples = [{ x: 100, y: 200, t: 1000 }, { x: 140, y: 180, t: 1040 }];
   const velocity = motion.releaseVelocity(samples, 150, 175, 1050);
-  assert.equal(velocity.vx, 8);
-  assert.equal(velocity.vy, -4);
+  assert.ok(Math.abs(velocity.vx - 9.6) < 1e-9);
+  assert.ok(Math.abs(velocity.vy + 4.8) < 1e-9);
   const paused = motion.releaseVelocity(samples, 150, 175, 1201);
   assert.equal(paused.vx, 0);
   assert.equal(paused.vy, 0);
   const fast = motion.releaseVelocity([{ x: 0, y: 0, t: 1000 }], 2000, -2000, 1001);
-  assert.equal(fast.vx, 10);
-  assert.equal(fast.vy, -12);
+  assert.equal(fast.vx, 12);
+  assert.ok(Math.abs(fast.vy + 14.4) < 1e-9);
 });
 
 test('airborne horizontal momentum makes a short arc and stops at screen edges', () => {

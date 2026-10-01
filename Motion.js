@@ -45,10 +45,10 @@ function releaseVelocity(samples, x, y, now) {
     if (!oldest || sample.t < oldest.t) oldest = sample
   }
   if (!oldest || now <= oldest.t) return zero
-  var tickFactor = 8 / (now - oldest.t) // 50% of pointer speed over one 16ms tick
+  var tickFactor = 9.6 / (now - oldest.t) // 60% of pointer speed over one 16ms tick
   return {
-    vx: Math.max(-10, Math.min(10, (x - oldest.x) * tickFactor)),
-    vy: Math.max(-12, Math.min(12, (y - oldest.y) * tickFactor))
+    vx: Math.max(-12, Math.min(12, (x - oldest.x) * tickFactor)),
+    vy: Math.max(-14.4, Math.min(14.4, (y - oldest.y) * tickFactor))
   }
 }
 
