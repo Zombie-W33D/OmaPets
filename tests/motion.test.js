@@ -41,7 +41,9 @@ test('release uses actual cursor location and momentum instead of snapping to sa
   const release = windowSource.split('onReleased: function(mouse) {')[1]?.split('onCanceled:')[0] || '';
   assert.match(release, /root\.dragX = Math\.max\(0, Math\.min\(root\.width - sprite\.width, point\.x - offsetX\)\)/);
   assert.match(release, /root\.dragY = Math\.max\(0, Math\.min\(root\.height - sprite\.height, point\.y - offsetY\)\)/);
-  assert.match(release, /Motion\.releaseVelocity\(pointerSamples, point\.x, point\.y, Date\.now\(\)\)/);
+  assert.match(release, /var now = Date\.now\(\)/);
+  assert.match(release, /Motion\.releaseVelocity\(pointerSamples, point\.x, point\.y, now\)/);
+  assert.match(release, /root\.tossStartedAtMs = now/);
   assert.match(release, /root\.roamX = root\.dragX/);
   assert.match(release, /root\.fallY = root\.dragY/);
   assert.match(release, /root\.velocityX = velocity\.vx/);
@@ -49,17 +51,17 @@ test('release uses actual cursor location and momentum instead of snapping to sa
   assert.match(release, /root\.dragX = -1/);
 });
 
-test('a recent pointer swipe gives a 20% stronger bounded release velocity', () => {
+test('a recent pointer swipe gets another 20% launch speed over alpha.6', () => {
   const samples = [{ x: 100, y: 200, t: 1000 }, { x: 140, y: 180, t: 1040 }];
   const velocity = motion.releaseVelocity(samples, 150, 175, 1050);
-  assert.ok(Math.abs(velocity.vx - 9.6) < 1e-9);
-  assert.ok(Math.abs(velocity.vy + 4.8) < 1e-9);
+  assert.ok(Math.abs(velocity.vx - 11.52) < 1e-9);
+  assert.ok(Math.abs(velocity.vy + 5.76) < 1e-9);
   const paused = motion.releaseVelocity(samples, 150, 175, 1201);
   assert.equal(paused.vx, 0);
   assert.equal(paused.vy, 0);
   const fast = motion.releaseVelocity([{ x: 0, y: 0, t: 1000 }], 2000, -2000, 1001);
-  assert.equal(fast.vx, 12);
-  assert.ok(Math.abs(fast.vy + 14.4) < 1e-9);
+  assert.ok(Math.abs(fast.vx - 14.4) < 1e-9);
+  assert.ok(Math.abs(fast.vy + 17.28) < 1e-9);
 });
 
 test('airborne horizontal momentum makes a short arc and stops at screen edges', () => {
@@ -80,6 +82,35 @@ test('the fall timer moves horizontally while airborne and stops momentum on lan
   assert.match(fallTick, /root\.roamX = lateral\.x/);
   assert.match(fallTick, /root\.velocityX = lateral\.vx/);
   assert.match(fallTick, /if \(root\.grounded\) root\.velocityX = 0/);
+});
+
+test('the fall timer gradually restores normal gravity only after a toss', () => {
+  const fallTick = windowSource.split('running: root.visible && root.fallY >= 0')[1]?.split('function startRoam()')[0] || '';
+  assert.match(fallTick, /var gravityScale = root\.tossStartedAtMs < 0 \? 1 : Motion\.tossGravityScale\(Date\.now\(\) - root\.tossStartedAtMs\)/);
+  assert.match(fallTick, /Motion\.gravityStep\(root\.fallY, root\.velocityY, root\.groundY, 0\.4, gravityScale\)/);
+});
+
+test('toss gravity starts at half and returns to normal over five seconds', () => {
+  assert.equal(motion.tossGravityScale(0), 0.5);
+  assert.equal(motion.tossGravityScale(2500), 0.75);
+  assert.equal(motion.tossGravityScale(5000), 1);
+  assert.equal(motion.tossGravityScale(10000), 1);
+  assert.equal(motion.tossGravityScale(-1), 1);
+  assert.equal(motion.tossGravityScale(Number.NaN), 1);
+});
+
+test('tossed gravity scales acceleration without weakening the release speed or normal drops', () => {
+  const half = motion.gravityStep(100, 0, 700, 0, 0.5);
+  assert.ok(Math.abs(half.y - 100.55) < 1e-9);
+  assert.ok(Math.abs(half.vy - 0.55) < 1e-9);
+  const launched = motion.gravityStep(100, 17.28, 700, 0, 0.5);
+  assert.ok(Math.abs(launched.vy - 17.83) < 1e-9);
+  const cap = motion.gravityStep(100, 100, 700, 0, 0.5);
+  assert.equal(cap.y, 124);
+  assert.equal(cap.vy, 24);
+  const normal = motion.gravityStep(100, 0, 700, 0);
+  assert.equal(normal.y, 101.1);
+  assert.equal(normal.vy, 1.1);
 });
 
 test('gravity accelerates, caps velocity and settles at the sprite-height floor', () => {

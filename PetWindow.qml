@@ -62,6 +62,7 @@ PanelWindow {
   property real fallY: -1
   property real velocityY: 0
   property real velocityX: 0
+  property real tossStartedAtMs: -1
   readonly property bool grounded: fallY >= 0 && fallY >= groundY && velocityY === 0
   readonly property bool airborne: fallY >= 0 && !grounded && !grabArea.pressed
   readonly property real petX: dragX >= 0 ? dragX
@@ -74,6 +75,7 @@ PanelWindow {
   property bool infoVisible: false
 
   function resetPhysics() {
+    tossStartedAtMs = -1
     velocityX = 0
     velocityY = 0
     fallY = profile && profile.pet && height > 0 ? 0 : -1
@@ -101,8 +103,9 @@ PanelWindow {
   onHeightChanged: if (profile && profile.pet && fallY < 0) root.resetPhysics()
   onGroundYChanged: if (fallY > groundY) { fallY = groundY; velocityY = 0 }
 
-  // OpenPets-inspired gravity gains 1.1px per 16ms, caps at 24px and
-  // bounces with damping. No physics ticks after a pet settles on the floor.
+  // Normal gravity gains 1.1px per 16ms and caps at 24px. After a toss, pull
+  // starts at half and recovers over five seconds; the speed cap stays fixed.
+  // Bounce is damped, and settled pets need no physics ticks.
   Timer {
     interval: 16
     repeat: true
@@ -113,7 +116,8 @@ PanelWindow {
         root.roamX = lateral.x
         root.velocityX = lateral.vx
       }
-      var next = Motion.gravityStep(root.fallY, root.velocityY, root.groundY, 0.4)
+      var gravityScale = root.tossStartedAtMs < 0 ? 1 : Motion.tossGravityScale(Date.now() - root.tossStartedAtMs)
+      var next = Motion.gravityStep(root.fallY, root.velocityY, root.groundY, 0.4, gravityScale)
       root.velocityY = next.vy
       root.fallY = next.y
       if (root.grounded) root.velocityX = 0
@@ -227,7 +231,9 @@ PanelWindow {
           var point = mapToItem(root.contentItem, mouse.x, mouse.y)
           root.dragX = Math.max(0, Math.min(root.width - sprite.width, point.x - offsetX))
           root.dragY = Math.max(0, Math.min(root.height - sprite.height, point.y - offsetY))
-          var velocity = Motion.releaseVelocity(pointerSamples, point.x, point.y, Date.now())
+          var now = Date.now()
+          var velocity = Motion.releaseVelocity(pointerSamples, point.x, point.y, now)
+          root.tossStartedAtMs = now
           root.roamX = root.dragX
           root.fallY = root.dragY
           root.velocityX = velocity.vx

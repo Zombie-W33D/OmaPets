@@ -7,14 +7,20 @@ var BOUNCE_THRESHOLD = 6
 var WANDER_DISTANCE = 120
 var SPEED_DURATION = { slow: 2250, normal: 1375, brisk: 750 }
 
-function gravityStep(y, vy, floor, bounce) {
+function tossGravityScale(elapsedMs) {
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return 1
+  return 0.5 + 0.5 * Math.min(1, elapsedMs / 5000)
+}
+
+function gravityStep(y, vy, floor, bounce, gravityScale) {
   var ground = Number.isFinite(floor) ? Math.max(0, floor) : 0
   if (!Number.isFinite(y) || y > ground) return { y: ground, vy: 0 }
   var position = Math.max(0, y)
   var velocity = Number.isFinite(vy) ? vy : 0
   if (position === ground && velocity === 0) return { y: ground, vy: 0 }
   var elasticity = Number.isFinite(bounce) ? Math.max(0, Math.min(1, bounce)) : 0.4
-  velocity = Math.min(velocity + GRAVITY_PER_TICK, MAX_FALL_SPEED)
+  var pull = Number.isFinite(gravityScale) ? Math.max(0.5, Math.min(1, gravityScale)) : 1
+  velocity = Math.min(velocity + GRAVITY_PER_TICK * pull, MAX_FALL_SPEED)
   position += velocity
   if (position < 0) {
     position = 0
@@ -45,10 +51,10 @@ function releaseVelocity(samples, x, y, now) {
     if (!oldest || sample.t < oldest.t) oldest = sample
   }
   if (!oldest || now <= oldest.t) return zero
-  var tickFactor = 9.6 / (now - oldest.t) // 60% of pointer speed over one 16ms tick
+  var tickFactor = 11.52 / (now - oldest.t) // 72% of pointer speed over one 16ms tick
   return {
-    vx: Math.max(-12, Math.min(12, (x - oldest.x) * tickFactor)),
-    vy: Math.max(-14.4, Math.min(14.4, (y - oldest.y) * tickFactor))
+    vx: Math.max(-14.4, Math.min(14.4, (x - oldest.x) * tickFactor)),
+    vy: Math.max(-17.28, Math.min(17.28, (y - oldest.y) * tickFactor))
   }
 }
 
