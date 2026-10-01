@@ -124,7 +124,7 @@ function speedDuration(speed) {
 }
 
 function frameInterval(airborne, walking, category) {
-  var original = airborne ? 168 : walking && category === "idle" ? 132
+  var original = airborne ? 168 : walking ? 132
     : category === "idle" ? 900 : 180
   return Math.round(original / 1.2)
 }

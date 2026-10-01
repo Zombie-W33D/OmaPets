@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.13`
+**Preview version:** `0.1.0-alpha.14`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -97,6 +97,8 @@ back to Hermes.
   then bounce to a stop on a visible window top, Omarchy bar, or the monitor floor; stay/wander controls horizontal
   movement with per-profile speed presets. Drag release retains the exact
   release position and applies bounded pointer-derived velocity for a short arc.
+  A walking pet uses its directional walking frames before any requested state
+  animation, rather than sliding across the screen while apparently working.
   Toss gravity starts at half and recovers linearly over three seconds without
   changing ordinary drops; a same-pet settings refresh does not restart the
   toss. A held pet uses row five when available, grips at its horizontal center

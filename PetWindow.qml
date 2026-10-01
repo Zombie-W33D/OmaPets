@@ -46,11 +46,11 @@ PanelWindow {
     ? Motion.heldAnimation(profile && profile.pet ? profile.pet.rows : 0,
                            profile && profile.pet ? profile.pet.columns : 0)
     : airborne ? Motion.airborneAnimation(profile && profile.pet ? profile.pet.rows : 0)
+    : walking ? ({ row: facingLeft ? 2 : 1, frames: 8 })
     : category === "waiting_on_you" && !waitingWave ? ({ row: 0, frames: 6 })
     : profile && profile.animations && profile.animations[category]
     ? profile.animations[category]
-    : (walking && category === "idle"
-       ? ({ row: facingLeft ? 2 : 1, frames: 8 }) : ({ row: 0, frames: 6 }))
+    : ({ row: 0, frames: 6 })
   property int frame: 0
   property int heldPhase: 0
   property bool waitingWave: false

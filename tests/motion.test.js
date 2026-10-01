@@ -205,6 +205,13 @@ test('sprite frames play at 120% of their former cadence', () => {
   assert.equal(motion.frameInterval(false, true, 'idle'), 110);
   assert.equal(motion.frameInterval(false, false, 'idle'), 750);
   assert.equal(motion.frameInterval(false, false, 'thinking'), 150);
+  assert.equal(motion.frameInterval(false, true, 'working'), 110);
+});
+
+test('walking animation takes precedence over a requested action', () => {
+  const animation = windowSource.split('readonly property var animation:')[1]?.split('property int frame:')[0] || '';
+  assert.match(animation, /: walking \? \(\{ row: facingLeft \? 2 : 1, frames: 8 \}\)/);
+  assert.ok(animation.indexOf(': walking ?') < animation.indexOf('profile.animations[category]'));
 });
 
 test('the frame timer keeps the 120% animation cadence outside the held state', () => {
