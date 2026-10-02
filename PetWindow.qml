@@ -387,7 +387,7 @@ PanelWindow {
   BorderSurface {
     id: card
     visible: root.infoVisible && !grabArea.pressed
-    width: Math.min(Style.space(236), Math.max(1, root.width - Style.space(16)))
+    width: Math.min(Style.space(160), Math.max(1, root.width - Style.space(16)))
     height: cardHeader.height + cardBodySection.height + borderTop + borderBottom
     x: Math.max(0, Math.min(root.width - width, sprite.x + sprite.width / 2 - width / 2))
     y: Math.max(0, sprite.y - height - 8)
@@ -455,7 +455,8 @@ PanelWindow {
         id: cardBody
         anchors.centerIn: parent
         width: Math.max(1, parent.width - Style.space(20))
-        text: root.activity && root.activity.phrase ? root.activity.phrase : ""
+        text: root.activity && root.activity.detail ? root.activity.detail
+          : root.activity && root.activity.phrase ? root.activity.phrase : ""
         textFormat: Text.PlainText
         color: Color.popups.text
         font.family: Style.font.family

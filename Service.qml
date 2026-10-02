@@ -16,6 +16,8 @@ Item {
   property var profiles: []
   property var petIds: []
   property var activity: ({})
+  property var botActivity: ({})
+  property bool botActivityReady: false
   property var surfaces: ({})
   property string previousSnapshot: ""
   property double nowMs: Date.now()
@@ -64,7 +66,16 @@ Item {
   }
 
   function activityFor(id) {
-    return Model.visibleEvent(root.activity[id], root.nowMs)
+    var live = root.botActivity[id]
+    if (live) return { category: live.category, detail: live.detail, phrase: "" }
+    var event = Model.visibleEvent(root.activity[id], root.nowMs)
+    // Hook events still provide explicit terminal outcomes, but are not a
+    // reliable source of whether an agent is currently doing work.
+    if (root.botActivityReady && ["thinking", "working", "waiting_on_you", "waiting_on_task"].indexOf(event.category) !== -1)
+      return { category: "idle", detail: "No current activity" }
+    if (event.category === "idle")
+      return { category: "idle", detail: root.botActivityReady ? "No current activity" : "Status unavailable" }
+    return event
   }
 
   function surfacesFor(name) {
@@ -104,6 +115,7 @@ Item {
     function status(): string {
       return JSON.stringify({
         profiles: root.profiles.length, visible: root.renderableProfiles.length,
+        botchatActive: Object.keys(root.botActivity).length,
         refreshing: root.refreshing, error: root.lastError.slice(0, 120)
       })
     }
@@ -157,6 +169,50 @@ Item {
     onTriggered: {
       settingsProcess.running = false
       root.lastError = "Saving pet settings timed out"
+    }
+  }
+
+  Process {
+    id: activityProcess
+    stdout: StdioCollector { id: activityOutput; waitForEnd: true }
+    onExited: function(exitCode) {
+      activityDeadline.stop()
+      if (exitCode !== 0) return
+      try {
+        if (activityOutput.text.length > 4096) throw new Error("large activity snapshot")
+        var parsed = JSON.parse(activityOutput.text)
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid activity")
+        var clean = ({})
+        var names = Object.keys(parsed)
+        if (names.length > 12) throw new Error("too many agents")
+        for (var i = 0; i < names.length; i++) {
+          var value = parsed[names[i]]
+          if (!root.profileById(names[i]) || !value
+              || ["thinking", "working", "waiting_on_you", "waiting_on_task"].indexOf(value.category) === -1
+              || typeof value.detail !== "string" || value.detail.length > 64)
+            continue
+          clean[names[i]] = value
+        }
+        root.botActivity = clean
+        root.botActivityReady = true
+      } catch (error) { /* Keep the previous known state on parse failure. */ }
+    }
+  }
+  Timer {
+    id: activityDeadline
+    interval: 4000
+    onTriggered: activityProcess.running = false
+  }
+  Timer {
+    interval: 2200
+    repeat: true
+    triggeredOnStart: true
+    running: root.renderableProfiles.length > 0
+    onTriggered: {
+      if (activityProcess.running) return
+      activityProcess.command = ["/usr/bin/python3", "-I", root.helperPath, "activity"]
+      activityProcess.running = true
+      activityDeadline.restart()
     }
   }
 

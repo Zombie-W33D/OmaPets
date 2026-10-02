@@ -7,6 +7,7 @@ const vm = require('node:vm');
 // The exact same dependency-free JavaScript is imported by PetWindow.qml.
 const source = fs.readFileSync(path.join(__dirname, '..', 'Motion.js'), 'utf8');
 const windowSource = fs.readFileSync(path.join(__dirname, '..', 'PetWindow.qml'), 'utf8');
+const serviceSource = fs.readFileSync(path.join(__dirname, '..', 'Service.qml'), 'utf8');
 const motion = vm.createContext({ Math, Number });
 vm.runInContext(source, motion);
 
@@ -286,13 +287,21 @@ test('left click only toggles the above-pet card while state events own the spee
   assert.doesNotMatch(windowSource, /root\.infoVisible && root\.profile \? root\.profile\.id/);
 });
 
+test('Bot Chat lease polling drives activity independently of Hermes hooks', () => {
+  assert.match(serviceSource, /"-I", root\.helperPath, "activity"/)
+  assert.match(serviceSource, /root\.botActivity = clean/)
+  assert.match(serviceSource, /root\.botActivity\[id\]/)
+  assert.match(serviceSource, /interval: 2200/)
+})
+
 test('the pet card uses the shell popup surface, typography and existing state text', () => {
   assert.match(windowSource, /import qs\.Ui/);
   assert.match(windowSource, /BorderSurface \{\s*id: card/);
   assert.match(windowSource, /color: Color\.popups\.background/);
   assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border"/);
   assert.match(windowSource, /radius: Style\.cornerRadius/);
-  assert.match(windowSource, /width: Math\.min\(Style\.space\(236\)/);
+  assert.match(windowSource, /width: Math\.min\(Style\.space\(160\)/);
+  assert.match(windowSource, /root\.activity\.detail \? root\.activity\.detail/);
   assert.match(windowSource, /color: Qt\.lighter\(Color\.popups\.background, 1\.12\)/);
   assert.match(windowSource, /font\.pixelSize: Style\.font\.caption/);
   assert.match(windowSource, /font\.pixelSize: Style\.font\.heading/);

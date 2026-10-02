@@ -21,6 +21,7 @@ def run(argv=None):
     parser.add_argument("--defaults", type=Path, default=Path(__file__).resolve().parents[1] / "phrases")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("snapshot")
+    subcommands.add_parser("activity")
     subcommands.add_parser("surfaces")
     setter = subcommands.add_parser("set")
     setter.add_argument("profile")
@@ -30,6 +31,9 @@ def run(argv=None):
 
     if args.command == "snapshot":
         result = build_snapshot(args.root, args.defaults)
+    elif args.command == "activity":
+        from scripts.omapets_activity import scan_activity
+        result = scan_activity(args.root)
     elif args.command == "surfaces":
         from scripts.omapets_surfaces import live_surfaces
         result = live_surfaces()

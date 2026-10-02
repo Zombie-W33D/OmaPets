@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.18`
+**Preview version:** `0.1.0-alpha.19`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
@@ -21,10 +21,16 @@ customized.
 - The service owns one shared profile/config/event model and static pet-window
   slots; the bar widget has a private popup for controls. Do not declare a
   top-level `panel` kind just to load that popup.
-- Hermes integration is a separate native Hermes plugin. It forwards only a
-  validated profile ID and fixed event/category identifier through Omarchy's
-  shell IPC. It never sends prompts, conversation text, tool arguments,
-  credentials or model output to the renderer.
+- Active Bot Chat animation is independent of the native plugin: the shell
+  polls each enabled profile's read-only Hermes state database for the canonical
+  Bot Chat turn lease plus recent, sanitized activity status. It never reads
+  message bodies or tool arguments and stops showing activity when the turn
+  lease ends. Unknown statuses use generic, truthful short text.
+- Hermes integration is a separate, optional native plugin for explicit
+  outcome signals. It forwards only a validated profile ID and fixed
+  event/category identifier through Omarchy's shell IPC. It never sends
+  prompts, conversation text, tool arguments, credentials or model output
+  to the renderer.
 - No extra HTTP server, second Quickshell process, privileged helper, network
   lookup, audio playback or additional model call.
 
