@@ -4,12 +4,12 @@
 
 OpenPets characters as per-agent desktop companions in the Omarchy Quattro shell. **Development preview (`0.1.0-alpha.27`).** No pet is shown until you enable that profile.
 
-The hosted Quickshell service owns independent, transparent, click-through layer surfaces; the bar widget lets you show/hide pets, choose the next installed character, and switch stay/wander. Pets appear at their saved horizontal position, drop from the top of the selected monitor, and bounce to a stop on visible windows, tiled-window top edges, the Omarchy bar if below the pet, or the floor. A moved/closed window releases its pet. Drag and release at any position to toss one in a gentle arc based on recent pointer motion; a config refresh does not restart its fall. Wander uses OpenPets-style 120px steps with slow/normal/brisk speed presets and stays within a perched window. While moving, the directional walking animation takes precedence over the requested state animation; the state animation resumes when the step ends. Left click toggles a narrow two-tone card above the pet: a name/state header and a brief Bot Chat activity update while the agent works. The hosted service reads each profile's canonical Bot Chat turn lease and sanitized activity label from its local SQLite state database every ~2 seconds; no bridge installation, agent restart, conversation content, or extra model call is needed for automatic activity animations. Explicit outcome signals and their phrase files remain available through the optional Hermes plugin. No audio is played.
+The hosted Quickshell service owns independent, transparent, click-through layer surfaces; the bar widget lets you show/hide pets, choose among locally available characters, and switch stay/wander. Pets appear at their saved horizontal position, drop from the top of the selected monitor, and bounce to a stop on visible windows, tiled-window top edges, the Omarchy bar if below the pet, or the floor. A moved/closed window releases its pet. Drag and release at any position to toss one in a gentle arc based on recent pointer motion; a config refresh does not restart its fall. Wander uses OpenPets-style 120px steps with slow/normal/brisk speed presets and stays within a perched window. While moving, the directional walking animation takes precedence over the requested state animation; the state animation resumes when the step ends. Left click toggles a narrow two-tone card above the pet: a name/state header and a brief Bot Chat activity update while the agent works. The hosted service reads each profile's canonical Bot Chat turn lease and sanitized activity label from its local SQLite state database every ~2 seconds; no bridge installation, agent restart, conversation content, or extra model call is needed for automatic activity animations. Explicit outcome signals and their phrase files remain available through the optional Hermes plugin. No audio is played.
 
 ## Requirements
 
 - Omarchy 4 Quattro with Quickshell and `/usr/bin/python3` (Python 3.10+).
-- A local OpenPets V1/V2 character package in `~/.hermes/pets/<id>/` containing `pet.json` and `spritesheet.webp`. This repository contains no character art or downloadable installer.
+- A separately supplied local OpenPets V1/V2 character package in `~/.hermes/pets/<id>/` containing `pet.json` and `spritesheet.webp`. Character packages are not distributed or installed by OmaPets.
 - Node.js is used only for development tests, not at runtime.
 - Use a machine you trust: Omarchy shell plugins execute in the user's shell process; the Hermes plugin executes in the agent process. Review them before enabling.
 
@@ -27,7 +27,7 @@ The Omarchy plugin has been installed and rendered on this desktop. The Hermes b
 
 ## One agent's config folder and custom phrases
 
-OmaPets discovers the default `~/.hermes/` home and named profiles in `~/.hermes/profiles/`. Missing `omapets/config.json` means **disabled**. The bar widget's **Show** button creates a private config and selects the first valid installed character. Alternatively, an agent may set up its own profile folder explicitly:
+OmaPets discovers the default `~/.hermes/` home and named profiles in `~/.hermes/profiles/`. Missing `omapets/config.json` means **disabled**. The bar widget's **Show** button creates a private config and selects the first valid locally available character package. Alternatively, an agent may set up its own profile folder explicitly:
 
 ```text
 ~/.hermes/profiles/aria/omapets/
@@ -36,13 +36,13 @@ OmaPets discovers the default `~/.hermes/` home and named profiles in `~/.hermes
     └── thinking.md
 ```
 
-Example `config.json` for that agent:
+Replace `your-pet-id` with the `id` from a character package already supplied under `~/.hermes/pets/`; this example does not identify or include a bundled character.
 
 ```json
 {
   "schemaVersion": 1,
   "enabled": true,
-  "petId": "socksy",
+  "petId": "your-pet-id",
   "mode": "stay",
   "speed": "slow",
   "screen": "",
@@ -92,4 +92,4 @@ omarchy plugin validate .
 
 ## Attribution and license
 
-OmaPets code is MIT © 2026 Zombie_W33D (see `LICENSE`). OpenPets package format and atlas mapping follow [OpenPetsHQ/openpets](https://github.com/OpenPetsHQ/openpets); the fixed transparent layer surface and input-mask approach follows [SLcode777/omagotchi](https://github.com/SLcode777/omagotchi). No upstream source files or character art are bundled here; installed characters retain their own licenses.
+OmaPets code is MIT © 2026 Zombie_W33D (see `LICENSE`). OpenPets package format and atlas mapping follow [OpenPetsHQ/openpets](https://github.com/OpenPetsHQ/openpets); the fixed transparent layer surface and input-mask approach follows [SLcode777/omagotchi](https://github.com/SLcode777/omagotchi). No upstream source files or character packages are included in this repository; separately supplied characters retain their own licenses.
