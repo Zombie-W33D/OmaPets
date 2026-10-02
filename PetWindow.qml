@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Ui
 import "Motion.js" as Motion
 import "Model.js" as Model
 
@@ -383,42 +384,63 @@ PanelWindow {
 
   // Left click is informational only. The lifecycle event chooses the phrase;
   // showing this card never changes state or samples a fresh response.
-  Rectangle {
+  BorderSurface {
     id: card
     visible: root.infoVisible && !grabArea.pressed
-    width: Math.min(260, Math.max(160, root.width - 16))
-    height: cardHeader.implicitHeight + (cardBody.visible ? cardBody.implicitHeight + 8 : 0) + 24
+    width: Math.min(Style.space(292), Math.max(1, root.width - Style.space(16)))
+    height: cardContent.implicitHeight + contentTopInset + contentBottomInset
     x: Math.max(0, Math.min(root.width - width, sprite.x + sprite.width / 2 - width / 2))
     y: Math.max(0, sprite.y - height - 8)
-    radius: 9
-    color: Color.background
-    opacity: 0.96
-    border.color: Color.foreground
-    border.width: 1
+    radius: Style.cornerRadius
+    color: Color.popups.background
+    borderSpec: Border.localOrSurfaceSpec("popups", "border", Color.popups.border,
+                                         Color.popups.border, Math.max(1, Style.space(2)))
+    padding: Style.spacing.popupPadding
 
-    Text {
-      id: cardHeader
-      x: 12
-      y: 10
-      width: card.width - 24
-      text: (root.profile ? root.profile.id : "Agent") + " · " + Model.statusLabel(root.category)
-      textFormat: Text.PlainText
-      color: Color.foreground
-      font.bold: true
-      font.pixelSize: 12
-      elide: Text.ElideRight
-    }
-    Text {
-      id: cardBody
-      x: 12
-      y: cardHeader.y + cardHeader.implicitHeight + 8
-      width: card.width - 24
-      text: root.activity && root.activity.phrase ? root.activity.phrase : ""
-      visible: text !== ""
-      textFormat: Text.PlainText
-      color: Color.foreground
-      font.pixelSize: 12
-      wrapMode: Text.Wrap
+    Column {
+      id: cardContent
+      x: card.contentLeftInset
+      y: card.contentTopInset
+      width: Math.max(1, card.width - card.contentLeftInset - card.contentRightInset)
+      spacing: Style.space(6)
+
+      Text {
+        id: cardHeader
+        width: parent.width
+        text: root.profile ? root.profile.id : "Agent"
+        textFormat: Text.PlainText
+        color: Color.popups.text
+        font.family: Style.font.family
+        font.bold: true
+        font.pixelSize: Style.font.title
+        elide: Text.ElideRight
+      }
+      Text {
+        width: parent.width
+        text: Model.statusLabel(root.category)
+        textFormat: Text.PlainText
+        color: root.category === "failed" ? Color.urgent : Color.popups.text
+        opacity: root.category === "failed" ? 1 : 0.72
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+        elide: Text.ElideRight
+      }
+      PanelSeparator {
+        visible: cardBody.visible
+        width: parent.width
+        foreground: Color.popups.text
+      }
+      Text {
+        id: cardBody
+        width: parent.width
+        text: root.activity && root.activity.phrase ? root.activity.phrase : ""
+        visible: text !== ""
+        textFormat: Text.PlainText
+        color: Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.body
+        wrapMode: Text.Wrap
+      }
     }
   }
 }

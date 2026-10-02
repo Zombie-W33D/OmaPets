@@ -286,6 +286,30 @@ test('left click only toggles the above-pet card while state events own the spee
   assert.doesNotMatch(windowSource, /root\.infoVisible && root\.profile \? root\.profile\.id/);
 });
 
+test('the pet card uses the shell popup surface, typography and existing state text', () => {
+  assert.match(windowSource, /import qs\.Ui/);
+  assert.match(windowSource, /BorderSurface \{\s*id: card/);
+  assert.match(windowSource, /color: Color\.popups\.background/);
+  assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border"/);
+  assert.match(windowSource, /radius: Style\.cornerRadius/);
+  assert.match(windowSource, /font\.pixelSize: Style\.font\.title/);
+  assert.match(windowSource, /Model\.statusLabel\(root\.category\)/);
+  assert.match(windowSource, /root\.activity && root\.activity\.phrase \? root\.activity\.phrase : ""/);
+});
+
+test('the bar menu uses a fitted scrolling popup and theme controls', () => {
+  const barSource = fs.readFileSync(path.join(__dirname, '..', 'BarWidget.qml'), 'utf8');
+  assert.match(barSource, /PopupCard \{/);
+  assert.match(barSource, /Flickable \{/);
+  assert.match(barSource, /PanelHero \{/);
+  assert.match(barSource, /PanelSectionHeader \{/);
+  assert.match(barSource, /PanelSeparator \{/);
+  assert.match(barSource, /Color\.popups\.text/);
+  assert.match(barSource, /Style\.font\.body/);
+  for (const setting of ['enabled', 'mode', 'petId', 'speed'])
+    assert.match(barSource, new RegExp(`root\\.petService\\.configure\\(profileRow\\.modelData\\.id, "${setting}"`));
+});
+
 test('waiting on the user waves briefly then rests between waves', () => {
   assert.match(windowSource, /property bool waitingWave: false/);
   assert.match(windowSource, /category === "waiting_on_you" && !waitingWave[\s\S]*\{ row: 0, frames: 6 \}/);

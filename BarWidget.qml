@@ -40,112 +40,187 @@ BarWidget {
     contentWidth: popup.fittedContentWidth(Style.space(390))
     contentHeight: popup.fittedContentHeight(contents.implicitHeight)
 
-    Column {
-      id: contents
+    Flickable {
       anchors.fill: parent
-      spacing: Style.space(10)
+      clip: true
+      contentWidth: width
+      contentHeight: contents.implicitHeight
+      boundsBehavior: Flickable.StopAtBounds
 
-      Text {
-        text: "OmaPets · " + root.activeCount + " visible"
-        textFormat: Text.PlainText
-        font.bold: true
-        color: root.bar ? root.bar.foreground : Color.foreground
-      }
-      Text {
-        visible: !root.petService || root.petService.profiles.length === 0
-        text: root.petService ? "No local Hermes profiles found" : "OmaPets service unavailable"
-        textFormat: Text.PlainText
-        color: root.bar ? root.bar.foreground : Color.foreground
-      }
-      Text {
-        visible: root.petService && root.petService.lastError !== ""
-        text: root.petService ? root.petService.lastError : ""
-        textFormat: Text.PlainText
+      Column {
+        id: contents
         width: parent.width
-        wrapMode: Text.Wrap
-        color: Color.foreground
-      }
-      Text {
-        visible: root.petService && root.petService.petIds.length === 0
-        text: "Add a local OpenPets character in ~/.hermes/pets first"
-        textFormat: Text.PlainText
-        width: parent.width
-        wrapMode: Text.Wrap
-        color: root.bar ? root.bar.foreground : Color.foreground
-      }
+        spacing: Style.spacing.panelGap
 
-      Repeater {
-        model: root.petService ? root.petService.profiles : []
-        delegate: Column {
-          id: profileRow
-          required property var modelData
-          width: contents.width
-          spacing: Style.space(3)
-
-          Text {
-            text: profileRow.modelData.id + (profileRow.modelData.petId ? " · " + profileRow.modelData.petId : "")
-            textFormat: Text.PlainText
-            width: parent.width
-            elide: Text.ElideRight
-            color: root.bar ? root.bar.foreground : Color.foreground
-          }
-          Row {
-            spacing: Style.space(5)
+        PanelHero {
+          width: parent.width
+          title: "OmaPets"
+          meta: root.activeCount + (root.activeCount === 1 ? " companion visible" : " companions visible")
+          foreground: Color.popups.text
+          trailingControl: Component {
             Button {
-              text: profileRow.modelData.enabled ? "Hide" : "Show"
-              foreground: root.bar ? root.bar.foreground : Color.foreground
-              enabled: !!root.petService && (profileRow.modelData.enabled || root.petService.petIds.length > 0)
-              onClicked: root.petService.configure(profileRow.modelData.id, "enabled", profileRow.modelData.enabled ? "false" : "true")
-            }
-            Button {
-              text: profileRow.modelData.mode === "stay" ? "Stay" : "Wander"
-              foreground: root.bar ? root.bar.foreground : Color.foreground
+              text: "Refresh"
+              foreground: Color.popups.text
+              fontSize: Style.font.bodySmall
               enabled: !!root.petService
-              onClicked: root.petService.configure(profileRow.modelData.id, "mode", profileRow.modelData.mode === "stay" ? "wander" : "stay")
+              tooltipText: "Refresh profiles"
+              onClicked: root.petService.refresh()
             }
-            Button {
-              text: "Next character"
-              foreground: root.bar ? root.bar.foreground : Color.foreground
-              enabled: !!root.petService && root.petService.petIds.length > 1
-              onClicked: {
-                var pets = root.petService.petIds
-                var current = pets.indexOf(profileRow.modelData.petId)
-                root.petService.configure(profileRow.modelData.id, "petId", pets[(current + 1) % pets.length])
-              }
-            }
-          }
-          Button {
-            text: "Wander speed: " + (profileRow.modelData.speed || "slow")
-            foreground: root.bar ? root.bar.foreground : Color.foreground
-            enabled: !!root.petService && profileRow.modelData.mode === "wander"
-            onClicked: {
-              var speeds = ["slow", "normal", "brisk"]
-              var current = speeds.indexOf(profileRow.modelData.speed)
-              root.petService.configure(profileRow.modelData.id, "speed", speeds[(current + 1) % speeds.length])
-            }
-          }
-          Text {
-            visible: profileRow.modelData.error !== ""
-            text: profileRow.modelData.error
-            textFormat: Text.PlainText
-            width: parent.width
-            wrapMode: Text.Wrap
-            color: Color.foreground
           }
         }
-      }
-      Text {
-        text: "Drag a pet and release to let it fall. Settings stay per agent."
-        textFormat: Text.PlainText
-        width: parent.width
-        wrapMode: Text.Wrap
-        color: root.bar ? root.bar.foreground : Color.foreground
-      }
-      Button {
-        text: "Refresh profiles"
-        foreground: root.bar ? root.bar.foreground : Color.foreground
-        enabled: !!root.petService
-        onClicked: root.petService.refresh()
+
+        PanelSeparator { width: parent.width; foreground: Color.popups.text }
+
+        Text {
+          visible: !root.petService || root.petService.profiles.length === 0
+          text: root.petService ? "No local Hermes profiles found" : "OmaPets service unavailable"
+          textFormat: Text.PlainText
+          width: parent.width
+          wrapMode: Text.Wrap
+          color: Color.popups.text
+          font.family: Style.font.family
+          font.pixelSize: Style.font.body
+        }
+        Text {
+          visible: root.petService && root.petService.lastError !== ""
+          text: root.petService ? root.petService.lastError : ""
+          textFormat: Text.PlainText
+          width: parent.width
+          wrapMode: Text.Wrap
+          color: Color.urgent
+          font.family: Style.font.family
+          font.pixelSize: Style.font.bodySmall
+        }
+        Text {
+          visible: root.petService && root.petService.petIds.length === 0
+          text: "Add a local OpenPets character in ~/.hermes/pets first"
+          textFormat: Text.PlainText
+          width: parent.width
+          wrapMode: Text.Wrap
+          color: Color.popups.text
+          font.family: Style.font.family
+          font.pixelSize: Style.font.bodySmall
+        }
+
+        PanelSectionHeader {
+          visible: !!root.petService && root.petService.profiles.length > 0
+          text: "AGENTS"
+          foreground: Color.popups.text
+        }
+
+        Repeater {
+          model: root.petService ? root.petService.profiles : []
+          delegate: Column {
+            id: profileRow
+            required property var modelData
+            required property int index
+            width: contents.width
+            spacing: Style.space(6)
+
+            PanelSeparator {
+              visible: profileRow.index > 0
+              width: parent.width
+              foreground: Color.popups.text
+            }
+            Item { width: 1; height: profileRow.index > 0 ? Style.space(3) : 0 }
+            Row {
+              width: parent.width
+              spacing: Style.space(8)
+
+              Text {
+                text: profileRow.modelData.id
+                textFormat: Text.PlainText
+                width: Math.max(0, parent.width - statusLabel.implicitWidth - parent.spacing)
+                elide: Text.ElideRight
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.subtitle
+                font.bold: true
+              }
+              Text {
+                id: statusLabel
+                text: profileRow.modelData.enabled ? "VISIBLE" : "HIDDEN"
+                textFormat: Text.PlainText
+                color: profileRow.modelData.enabled ? Color.accent : Color.popups.text
+                opacity: profileRow.modelData.enabled ? 1 : 0.65
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+            }
+            Text {
+              text: profileRow.modelData.petId || "No character selected"
+              textFormat: Text.PlainText
+              width: parent.width
+              elide: Text.ElideRight
+              color: Color.popups.text
+              opacity: 0.7
+              font.family: Style.font.family
+              font.pixelSize: Style.font.bodySmall
+            }
+            Row {
+              spacing: Style.space(4)
+              Button {
+                text: profileRow.modelData.enabled ? "Hide" : "Show"
+                foreground: Color.popups.text
+                fontSize: Style.font.bodySmall
+                selected: profileRow.modelData.enabled
+                enabled: !!root.petService && (profileRow.modelData.enabled || root.petService.petIds.length > 0)
+                onClicked: root.petService.configure(profileRow.modelData.id, "enabled", profileRow.modelData.enabled ? "false" : "true")
+              }
+              Button {
+                text: profileRow.modelData.mode === "stay" ? "Stay" : "Wander"
+                foreground: Color.popups.text
+                fontSize: Style.font.bodySmall
+                enabled: !!root.petService
+                onClicked: root.petService.configure(profileRow.modelData.id, "mode", profileRow.modelData.mode === "stay" ? "wander" : "stay")
+              }
+              Button {
+                text: "Next character"
+                foreground: Color.popups.text
+                fontSize: Style.font.bodySmall
+                enabled: !!root.petService && root.petService.petIds.length > 1
+                onClicked: {
+                  var pets = root.petService.petIds
+                  var current = pets.indexOf(profileRow.modelData.petId)
+                  root.petService.configure(profileRow.modelData.id, "petId", pets[(current + 1) % pets.length])
+                }
+              }
+            }
+            Button {
+              text: "Wander speed: " + (profileRow.modelData.speed || "slow")
+              foreground: Color.popups.text
+              fontSize: Style.font.bodySmall
+              enabled: !!root.petService && profileRow.modelData.mode === "wander"
+              onClicked: {
+                var speeds = ["slow", "normal", "brisk"]
+                var current = speeds.indexOf(profileRow.modelData.speed)
+                root.petService.configure(profileRow.modelData.id, "speed", speeds[(current + 1) % speeds.length])
+              }
+            }
+            Text {
+              visible: profileRow.modelData.error !== ""
+              text: profileRow.modelData.error
+              textFormat: Text.PlainText
+              width: parent.width
+              wrapMode: Text.Wrap
+              color: Color.urgent
+              font.family: Style.font.family
+              font.pixelSize: Style.font.bodySmall
+            }
+          }
+        }
+        PanelSeparator { width: parent.width; foreground: Color.popups.text }
+        Text {
+          text: "Drag a pet and release to let it fall. Settings stay per agent."
+          textFormat: Text.PlainText
+          width: parent.width
+          wrapMode: Text.Wrap
+          color: Color.popups.text
+          opacity: 0.7
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+        }
       }
     }
   }
