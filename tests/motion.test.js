@@ -302,9 +302,11 @@ test('the pet card uses the shell popup surface, typography and existing state t
   assert.match(windowSource, /radius: Style\.cornerRadius/);
   assert.match(windowSource, /width: Math\.min\(Style\.space\(160\)/);
   assert.match(windowSource, /root\.activity\.detail \? root\.activity\.detail/);
-  assert.match(windowSource, /color: Qt\.lighter\(Color\.popups\.background, 1\.12\)/);
-  assert.match(windowSource, /font\.pixelSize: Style\.font\.caption/);
-  assert.match(windowSource, /font\.pixelSize: Style\.font\.heading/);
+  assert.match(windowSource, /color: Qt\.lighter\(Color\.popups\.background, 1\.18\)/);
+  const header = windowSource.split('id: headerRow')[1]?.split('id: cardBodySection')[0] || '';
+  assert.equal((header.match(/font\.pointSize: 6/g) || []).length, 2);
+  const body = windowSource.split('id: cardBody\n')[1] || '';
+  assert.match(body, /font\.pointSize: 10/);
   assert.match(windowSource, /Model\.statusLabel\(root\.category\)/);
   assert.match(windowSource, /root\.activity && root\.activity\.phrase \? root\.activity\.phrase : ""/);
 });

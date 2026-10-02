@@ -419,7 +419,7 @@ PanelWindow {
           color: Color.popups.text
           font.family: Style.font.family
           font.bold: true
-          font.pixelSize: Style.font.caption
+          font.pointSize: 6
         }
         Text {
           id: cardState
@@ -428,7 +428,7 @@ PanelWindow {
           color: root.category === "failed" ? Color.urgent : Color.popups.text
           opacity: root.category === "failed" ? 1 : 0.72
           font.family: Style.font.family
-          font.pixelSize: Style.font.caption
+          font.pointSize: 6
           elide: Text.ElideRight
         }
       }
@@ -441,7 +441,7 @@ PanelWindow {
       width: Math.max(1, card.width - card.borderLeft - card.borderRight)
       height: visible ? cardBody.implicitHeight + Style.space(18) : 0
       radius: Math.max(0, card.radius - card.borderLeft)
-      color: Qt.lighter(Color.popups.background, 1.12)
+      color: Qt.lighter(Color.popups.background, 1.18)
 
       // Square the upper seam, keeping the lower corners softly rounded.
       Rectangle {
@@ -460,7 +460,7 @@ PanelWindow {
         textFormat: Text.PlainText
         color: Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.heading
+        font.pointSize: 10
         wrapMode: Text.Wrap
       }
     }
