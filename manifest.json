@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.zombie-w33d.omapets",
   "name": "OmaPets",
-  "version": "0.1.0-alpha.16",
+  "version": "0.1.0-alpha.17",
   "author": "Zombie_W33D",
   "license": "MIT",
   "description": "Hermes-driven OpenPets desktop companions for Omarchy.",

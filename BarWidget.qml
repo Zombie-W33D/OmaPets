@@ -158,7 +158,8 @@ BarWidget {
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
-            Row {
+            Flow {
+              width: parent.width
               spacing: Style.space(4)
               Button {
                 text: profileRow.modelData.enabled ? "Hide" : "Show"
