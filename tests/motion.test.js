@@ -312,7 +312,7 @@ test('the pet card uses the shell popup surface, typography and existing state t
   assert.match(windowSource, /root\.activity && root\.activity\.phrase \? root\.activity\.phrase : ""/);
 });
 
-test('the card header uses a themed active tint distinct from its popup frame', () => {
+test('the card header mixes the themed frame color into the dark popup background', () => {
   const header = windowSource.split('id: cardHeader')[1]?.split('id: headerRow')[0] || '';
   assert.match(windowSource, /readonly property var themeBorderSpec: Border\.localOrSurfaceSpec\("popups", "border", Color\.popups\.border/);
   assert.match(windowSource, /readonly property real frameVertical: Math\.max\(Border\.top\(themeBorderSpec\), Border\.bottom\(themeBorderSpec\)\)/);
@@ -322,9 +322,9 @@ test('the card header uses a themed active tint distinct from its popup frame', 
   assert.match(windowSource, /Rectangle \{\s*id: cardHeader/);
   assert.match(header, /color: Qt\.rgba\(/);
   for (const channel of ['r', 'g', 'b'])
-    assert.match(header, new RegExp(`Color\\.popups\\.background\\.${channel} \\* 0\\.5 \\+ Color\\.bar\\.active\\.${channel} \\* 0\\.5`));
+    assert.match(header, new RegExp(`Color\\.popups\\.background\\.${channel} \\* 0\\.5 \\+ Color\\.popups\\.border\\.${channel} \\* 0\\.5`));
   assert.match(header, /anchors\.bottom: parent\.bottom/);
-  assert.doesNotMatch(header, /color: Color\.popups\.border/);
+  assert.doesNotMatch(header, /Color\.bar\.active/);
 });
 
 test('the bar menu uses a fitted scrolling popup and theme controls', () => {

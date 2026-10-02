@@ -412,11 +412,11 @@ PanelWindow {
       width: Math.max(1, card.width - Border.left(card.frameSpec) - Border.right(card.frameSpec))
       height: headerRow.implicitHeight + Style.space(12)
       radius: Math.max(0, card.radius - card.frameVertical)
-      // Make the header a clear themed color section, distinct from the frame.
+      // Blend the theme-owned frame color into the dark popup surface.
       color: Qt.rgba(
-        Color.popups.background.r * 0.5 + Color.bar.active.r * 0.5,
-        Color.popups.background.g * 0.5 + Color.bar.active.g * 0.5,
-        Color.popups.background.b * 0.5 + Color.bar.active.b * 0.5,
+        Color.popups.background.r * 0.5 + Color.popups.border.r * 0.5,
+        Color.popups.background.g * 0.5 + Color.popups.border.g * 0.5,
+        Color.popups.background.b * 0.5 + Color.popups.border.b * 0.5,
         Color.popups.background.a)
 
       Rectangle {
