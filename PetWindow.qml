@@ -405,9 +405,9 @@ PanelWindow {
       radius: Math.max(0, card.radius - card.borderTop)
       // A quiet tint of the themed active color, not the frame's border color.
       color: Qt.rgba(
-        Color.popups.background.r * 0.76 + Color.bar.active.r * 0.24,
-        Color.popups.background.g * 0.76 + Color.bar.active.g * 0.24,
-        Color.popups.background.b * 0.76 + Color.bar.active.b * 0.24,
+        Color.popups.background.r * 0.712 + Color.bar.active.r * 0.288,
+        Color.popups.background.g * 0.712 + Color.bar.active.g * 0.288,
+        Color.popups.background.b * 0.712 + Color.bar.active.b * 0.288,
         Color.popups.background.a)
 
       Rectangle {

@@ -316,8 +316,8 @@ test('the card header uses a themed active tint distinct from its popup frame', 
   assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border", Color\.popups\.border/);
   assert.match(windowSource, /Rectangle \{\s*id: cardHeader/);
   assert.match(header, /color: Qt\.rgba\(/);
-  assert.match(header, /Color\.bar\.active\.r/);
-  assert.match(header, /Color\.popups\.background\.r/);
+  for (const channel of ['r', 'g', 'b'])
+    assert.match(header, new RegExp(`Color\\.popups\\.background\\.${channel} \\* 0\\.712 \\+ Color\\.bar\\.active\\.${channel} \\* 0\\.288`));
   assert.match(header, /anchors\.bottom: parent\.bottom/);
   assert.doesNotMatch(header, /color: Color\.popups\.border/);
 });

@@ -2,7 +2,7 @@
 
 **Identity:** OmaPets — `io.github.zombie-w33d.omapets`
 **Owner:** Zombie_W33D
-**Preview version:** `0.1.0-alpha.21`
+**Preview version:** `0.1.0-alpha.22`
 **Status:** Portable runtime and bridge checks pass; live evidence is reported separately.
 
 ## User outcome
