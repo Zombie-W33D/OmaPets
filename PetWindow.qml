@@ -465,7 +465,7 @@ PanelWindow {
       width: Math.max(1, card.width - Border.left(card.frameSpec) - Border.right(card.frameSpec))
       height: visible ? cardBody.implicitHeight + Style.space(18) : 0
       radius: Math.max(0, card.radius - card.frameVertical)
-      color: Qt.lighter(Color.popups.background, 1.18)
+      color: Qt.lighter(Color.popups.background, 1.24)
 
       // Square the upper seam, keeping the lower corners softly rounded.
       Rectangle {
