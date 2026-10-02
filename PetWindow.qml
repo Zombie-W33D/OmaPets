@@ -388,26 +388,35 @@ PanelWindow {
     id: card
     visible: root.infoVisible && !grabArea.pressed
     width: Math.min(Style.space(160), Math.max(1, root.width - Style.space(16)))
-    height: cardHeader.height + cardBodySection.height + borderTop + borderBottom
+    height: cardHeader.height + cardBodySection.height + frameVertical * 2
     x: Math.max(0, Math.min(root.width - width, sprite.x + sprite.width / 2 - width / 2))
     y: Math.max(0, sprite.y - height - 8)
     radius: Style.cornerRadius
     color: Color.popups.background
-    borderSpec: Border.localOrSurfaceSpec("popups", "border", Color.popups.border,
-                                         Color.popups.border, Math.max(1, Style.space(2)))
+    // Draw the frame last, above both color sections. Native Rectangle borders
+    // draw first, letting the section corners visually swallow parts of the rim.
+    readonly property var themeBorderSpec: Border.localOrSurfaceSpec("popups", "border", Color.popups.border,
+                                                                      Color.popups.border, Math.max(1, Style.space(2)))
+    readonly property real frameVertical: Math.max(Border.top(themeBorderSpec), Border.bottom(themeBorderSpec))
+    readonly property var frameSpec: ({
+      color: Border.color(themeBorderSpec),
+      gradient: themeBorderSpec.gradient,
+      widths: { top: frameVertical, right: Border.right(themeBorderSpec), bottom: frameVertical, left: Border.left(themeBorderSpec) }
+    })
+    borderSpec: Border.none()
 
     Rectangle {
       id: cardHeader
-      x: card.borderLeft
-      y: card.borderTop
-      width: Math.max(1, card.width - card.borderLeft - card.borderRight)
+      x: Border.left(card.frameSpec)
+      y: card.frameVertical
+      width: Math.max(1, card.width - Border.left(card.frameSpec) - Border.right(card.frameSpec))
       height: headerRow.implicitHeight + Style.space(12)
-      radius: Math.max(0, card.radius - card.borderTop)
-      // A quiet tint of the themed active color, not the frame's border color.
+      radius: Math.max(0, card.radius - card.frameVertical)
+      // Make the header a clear themed color section, distinct from the frame.
       color: Qt.rgba(
-        Color.popups.background.r * 0.712 + Color.bar.active.r * 0.288,
-        Color.popups.background.g * 0.712 + Color.bar.active.g * 0.288,
-        Color.popups.background.b * 0.712 + Color.bar.active.b * 0.288,
+        Color.popups.background.r * 0.5 + Color.bar.active.r * 0.5,
+        Color.popups.background.g * 0.5 + Color.bar.active.g * 0.5,
+        Color.popups.background.b * 0.5 + Color.bar.active.b * 0.5,
         Color.popups.background.a)
 
       Rectangle {
@@ -451,11 +460,11 @@ PanelWindow {
     Rectangle {
       id: cardBodySection
       visible: cardBody.text !== ""
-      x: card.borderLeft
+      x: Border.left(card.frameSpec)
       y: cardHeader.y + cardHeader.height
-      width: Math.max(1, card.width - card.borderLeft - card.borderRight)
+      width: Math.max(1, card.width - Border.left(card.frameSpec) - Border.right(card.frameSpec))
       height: visible ? cardBody.implicitHeight + Style.space(18) : 0
-      radius: Math.max(0, card.radius - card.borderLeft)
+      radius: Math.max(0, card.radius - card.frameVertical)
       color: Qt.lighter(Color.popups.background, 1.18)
 
       // Square the upper seam, keeping the lower corners softly rounded.
@@ -478,6 +487,10 @@ PanelWindow {
         font.pointSize: 10
         wrapMode: Text.Wrap
       }
+    }
+    BorderOverlay {
+      borderSpec: card.frameSpec
+      radius: card.radius
     }
   }
 }

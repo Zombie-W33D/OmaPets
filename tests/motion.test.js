@@ -298,7 +298,8 @@ test('the pet card uses the shell popup surface, typography and existing state t
   assert.match(windowSource, /import qs\.Ui/);
   assert.match(windowSource, /BorderSurface \{\s*id: card/);
   assert.match(windowSource, /color: Color\.popups\.background/);
-  assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border"/);
+  assert.match(windowSource, /readonly property var themeBorderSpec: Border\.localOrSurfaceSpec\("popups", "border"/);
+  assert.match(windowSource, /borderSpec: Border\.none\(\)/);
   assert.match(windowSource, /radius: Style\.cornerRadius/);
   assert.match(windowSource, /width: Math\.min\(Style\.space\(160\)/);
   assert.match(windowSource, /root\.activity\.detail \? root\.activity\.detail/);
@@ -313,11 +314,15 @@ test('the pet card uses the shell popup surface, typography and existing state t
 
 test('the card header uses a themed active tint distinct from its popup frame', () => {
   const header = windowSource.split('id: cardHeader')[1]?.split('id: headerRow')[0] || '';
-  assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border", Color\.popups\.border/);
+  assert.match(windowSource, /readonly property var themeBorderSpec: Border\.localOrSurfaceSpec\("popups", "border", Color\.popups\.border/);
+  assert.match(windowSource, /readonly property real frameVertical: Math\.max\(Border\.top\(themeBorderSpec\), Border\.bottom\(themeBorderSpec\)\)/);
+  assert.match(windowSource, /widths: \{ top: frameVertical, right: Border\.right\(themeBorderSpec\), bottom: frameVertical, left: Border\.left\(themeBorderSpec\) \}/);
+  assert.match(windowSource, /BorderOverlay \{[\s\S]*borderSpec: card\.frameSpec[\s\S]*radius: card\.radius/);
+  assert.ok(windowSource.indexOf('BorderOverlay {', windowSource.indexOf('id: card')) > windowSource.indexOf('id: cardBodySection'));
   assert.match(windowSource, /Rectangle \{\s*id: cardHeader/);
   assert.match(header, /color: Qt\.rgba\(/);
   for (const channel of ['r', 'g', 'b'])
-    assert.match(header, new RegExp(`Color\\.popups\\.background\\.${channel} \\* 0\\.712 \\+ Color\\.bar\\.active\\.${channel} \\* 0\\.288`));
+    assert.match(header, new RegExp(`Color\\.popups\\.background\\.${channel} \\* 0\\.5 \\+ Color\\.bar\\.active\\.${channel} \\* 0\\.5`));
   assert.match(header, /anchors\.bottom: parent\.bottom/);
   assert.doesNotMatch(header, /color: Color\.popups\.border/);
 });
