@@ -2,7 +2,7 @@
 
 [![Built for Omarchy: Plugin](https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg)](https://github.com/tcballard/omarchy-badges)
 
-OpenPets characters as per-agent desktop companions in the Omarchy Quattro shell. **Development preview (`0.1.0-alpha.17`).** No pet is shown until you enable that profile.
+OpenPets characters as per-agent desktop companions in the Omarchy Quattro shell. **Development preview (`0.1.0-alpha.18`).** No pet is shown until you enable that profile.
 
 The hosted Quickshell service owns independent, transparent, click-through layer surfaces; the bar widget lets you show/hide pets, choose the next installed character, and switch stay/wander. Pets appear at their saved horizontal position, drop from the top of the selected monitor, and bounce to a stop on visible windows, tiled-window top edges, the Omarchy bar if below the pet, or the floor. A moved/closed window releases its pet. Drag and release at any position to toss one in a gentle arc based on recent pointer motion; a config refresh does not restart its fall. Wander uses OpenPets-style 120px steps with slow/normal/brisk speed presets and stays within a perched window. While moving, the directional walking animation takes precedence over the requested state animation; the state animation resumes when the step ends. Left click toggles a small card above the pet; lifecycle events separately choose its animation and a random state-specific speech line. A separate, optional Hermes plugin sends lifecycle events without forwarding chat content or starting another model call. No audio is played.
 

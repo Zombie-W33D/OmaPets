@@ -387,58 +387,79 @@ PanelWindow {
   BorderSurface {
     id: card
     visible: root.infoVisible && !grabArea.pressed
-    width: Math.min(Style.space(292), Math.max(1, root.width - Style.space(16)))
-    height: cardContent.implicitHeight + contentTopInset + contentBottomInset
+    width: Math.min(Style.space(236), Math.max(1, root.width - Style.space(16)))
+    height: cardHeader.height + cardBodySection.height + borderTop + borderBottom
     x: Math.max(0, Math.min(root.width - width, sprite.x + sprite.width / 2 - width / 2))
     y: Math.max(0, sprite.y - height - 8)
     radius: Style.cornerRadius
     color: Color.popups.background
     borderSpec: Border.localOrSurfaceSpec("popups", "border", Color.popups.border,
                                          Color.popups.border, Math.max(1, Style.space(2)))
-    padding: Style.spacing.popupPadding
 
-    Column {
-      id: cardContent
-      x: card.contentLeftInset
-      y: card.contentTopInset
-      width: Math.max(1, card.width - card.contentLeftInset - card.contentRightInset)
-      spacing: Style.space(6)
+    Item {
+      id: cardHeader
+      x: card.borderLeft
+      y: card.borderTop
+      width: Math.max(1, card.width - card.borderLeft - card.borderRight)
+      height: headerRow.implicitHeight + Style.space(12)
 
-      Text {
-        id: cardHeader
-        width: parent.width
-        text: root.profile ? root.profile.id : "Agent"
-        textFormat: Text.PlainText
-        color: Color.popups.text
-        font.family: Style.font.family
-        font.bold: true
-        font.pixelSize: Style.font.title
-        elide: Text.ElideRight
+      Row {
+        id: headerRow
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: Style.space(10)
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Style.space(6)
+
+        Text {
+          text: root.profile ? root.profile.id : "Agent"
+          textFormat: Text.PlainText
+          width: Math.max(0, parent.width - cardState.implicitWidth - parent.spacing)
+          elide: Text.ElideRight
+          color: Color.popups.text
+          font.family: Style.font.family
+          font.bold: true
+          font.pixelSize: Style.font.caption
+        }
+        Text {
+          id: cardState
+          text: Model.statusLabel(root.category)
+          textFormat: Text.PlainText
+          color: root.category === "failed" ? Color.urgent : Color.popups.text
+          opacity: root.category === "failed" ? 1 : 0.72
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+        }
       }
-      Text {
-        width: parent.width
-        text: Model.statusLabel(root.category)
-        textFormat: Text.PlainText
-        color: root.category === "failed" ? Color.urgent : Color.popups.text
-        opacity: root.category === "failed" ? 1 : 0.72
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
-        elide: Text.ElideRight
-      }
-      PanelSeparator {
-        visible: cardBody.visible
-        width: parent.width
-        foreground: Color.popups.text
+    }
+    Rectangle {
+      id: cardBodySection
+      visible: cardBody.text !== ""
+      x: card.borderLeft
+      y: cardHeader.y + cardHeader.height
+      width: Math.max(1, card.width - card.borderLeft - card.borderRight)
+      height: visible ? cardBody.implicitHeight + Style.space(18) : 0
+      radius: Math.max(0, card.radius - card.borderLeft)
+      color: Qt.lighter(Color.popups.background, 1.12)
+
+      // Square the upper seam, keeping the lower corners softly rounded.
+      Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: parent.radius
+        color: parent.color
       }
       Text {
         id: cardBody
-        width: parent.width
+        anchors.centerIn: parent
+        width: Math.max(1, parent.width - Style.space(20))
         text: root.activity && root.activity.phrase ? root.activity.phrase : ""
-        visible: text !== ""
         textFormat: Text.PlainText
         color: Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.body
+        font.pixelSize: Style.font.heading
         wrapMode: Text.Wrap
       }
     }

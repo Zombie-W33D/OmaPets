@@ -292,7 +292,10 @@ test('the pet card uses the shell popup surface, typography and existing state t
   assert.match(windowSource, /color: Color\.popups\.background/);
   assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border"/);
   assert.match(windowSource, /radius: Style\.cornerRadius/);
-  assert.match(windowSource, /font\.pixelSize: Style\.font\.title/);
+  assert.match(windowSource, /width: Math\.min\(Style\.space\(236\)/);
+  assert.match(windowSource, /color: Qt\.lighter\(Color\.popups\.background, 1\.12\)/);
+  assert.match(windowSource, /font\.pixelSize: Style\.font\.caption/);
+  assert.match(windowSource, /font\.pixelSize: Style\.font\.heading/);
   assert.match(windowSource, /Model\.statusLabel\(root\.category\)/);
   assert.match(windowSource, /root\.activity && root\.activity\.phrase \? root\.activity\.phrase : ""/);
 });
@@ -300,6 +303,8 @@ test('the pet card uses the shell popup surface, typography and existing state t
 test('the bar menu uses a fitted scrolling popup and theme controls', () => {
   const barSource = fs.readFileSync(path.join(__dirname, '..', 'BarWidget.qml'), 'utf8');
   assert.match(barSource, /PopupCard \{/);
+  assert.match(barSource, /fittedContentHeight\(contents\.implicitHeight, popup\.availableCardHeight \/ 2\)/);
+  assert.match(barSource, /spacing: Style\.spacing\.labelGap/);
   assert.match(barSource, /Flickable \{/);
   assert.match(barSource, /PanelHero \{/);
   assert.match(barSource, /PanelSectionHeader \{/);

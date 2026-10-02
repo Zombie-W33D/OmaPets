@@ -38,7 +38,7 @@ BarWidget {
     owner: root
     open: root.opened
     contentWidth: popup.fittedContentWidth(Style.space(390))
-    contentHeight: popup.fittedContentHeight(contents.implicitHeight)
+    contentHeight: popup.fittedContentHeight(contents.implicitHeight, popup.availableCardHeight / 2)
 
     Flickable {
       anchors.fill: parent
@@ -50,7 +50,7 @@ BarWidget {
       Column {
         id: contents
         width: parent.width
-        spacing: Style.spacing.panelGap
+        spacing: Style.spacing.labelGap
 
         PanelHero {
           width: parent.width
@@ -115,14 +115,13 @@ BarWidget {
             required property var modelData
             required property int index
             width: contents.width
-            spacing: Style.space(6)
+            spacing: Style.space(2)
 
             PanelSeparator {
               visible: profileRow.index > 0
               width: parent.width
               foreground: Color.popups.text
             }
-            Item { width: 1; height: profileRow.index > 0 ? Style.space(3) : 0 }
             Row {
               width: parent.width
               spacing: Style.space(8)
@@ -187,16 +186,16 @@ BarWidget {
                   root.petService.configure(profileRow.modelData.id, "petId", pets[(current + 1) % pets.length])
                 }
               }
-            }
-            Button {
-              text: "Wander speed: " + (profileRow.modelData.speed || "slow")
-              foreground: Color.popups.text
-              fontSize: Style.font.bodySmall
-              enabled: !!root.petService && profileRow.modelData.mode === "wander"
-              onClicked: {
-                var speeds = ["slow", "normal", "brisk"]
-                var current = speeds.indexOf(profileRow.modelData.speed)
-                root.petService.configure(profileRow.modelData.id, "speed", speeds[(current + 1) % speeds.length])
+              Button {
+                text: "Speed: " + (profileRow.modelData.speed || "slow")
+                foreground: Color.popups.text
+                fontSize: Style.font.bodySmall
+                enabled: !!root.petService && profileRow.modelData.mode === "wander"
+                onClicked: {
+                  var speeds = ["slow", "normal", "brisk"]
+                  var current = speeds.indexOf(profileRow.modelData.speed)
+                  root.petService.configure(profileRow.modelData.id, "speed", speeds[(current + 1) % speeds.length])
+                }
               }
             }
             Text {
