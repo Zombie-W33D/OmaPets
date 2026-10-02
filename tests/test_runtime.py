@@ -16,11 +16,11 @@ class RuntimeTests(unittest.TestCase):
         self.root.mkdir()
         self.defaults = Path(__file__).resolve().parents[1] / "phrases"
 
-    def add_pet(self):
-        package = self.root / "pets" / "socksy"
+    def add_pet(self, pet_id="socksy"):
+        package = self.root / "pets" / pet_id
         package.mkdir(parents=True)
         (package / "pet.json").write_text(json.dumps({
-            "id": "socksy", "displayName": "Socksy", "description": "A sock elf",
+            "id": pet_id, "displayName": pet_id, "description": "A test pet",
             "spriteVersionNumber": 2, "spritesheetPath": "spritesheet.webp",
         }))
         payload = bytes([0x10, 0, 0, 0]) + (1535).to_bytes(3, "little") + (2287).to_bytes(3, "little")
@@ -83,6 +83,13 @@ class RuntimeTests(unittest.TestCase):
                                                "petId": "", "mode": "stay", "speed": "slow", "screen": "",
                                                "position": {"x": 0.85, "y": 0.9}, "scale": 3,
                                                "pet": None, "error": ""}])
+
+    def test_snapshot_lists_more_than_32_installed_pets(self):
+        for index in range(40):
+            self.add_pet("pet-%02d" % index)
+        pet_ids = build_snapshot(self.root, self.defaults)["petIds"]
+        self.assertEqual(len(pet_ids), 40)
+        self.assertEqual(pet_ids, sorted(pet_ids))
 
     def test_enabled_profile_resolves_local_atlas_and_linked_phrases(self):
         package = self.add_pet()

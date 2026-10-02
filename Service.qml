@@ -42,7 +42,7 @@ Item {
     var parsed = JSON.parse(text)
     if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.profiles)
         || !Array.isArray(parsed.petIds) || parsed.profiles.length > 12
-        || parsed.petIds.length > 32) throw new Error("invalid snapshot")
+        || parsed.petIds.length > 64) throw new Error("invalid snapshot")
     root.petIds = parsed.petIds
     root.profiles = parsed.profiles
     root.previousSnapshot = text

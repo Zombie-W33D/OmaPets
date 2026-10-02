@@ -11,6 +11,10 @@ const serviceSource = fs.readFileSync(path.join(__dirname, '..', 'Service.qml'),
 const motion = vm.createContext({ Math, Number });
 vm.runInContext(source, motion);
 
+test('the hosted snapshot accepts the expanded bounded pet catalog', () => {
+  assert.match(serviceSource, /parsed\.petIds\.length\s*>\s*64/);
+});
+
 test('a newly visible pet starts at the top of its selected monitor', () => {
   assert.match(windowSource, /function resetPhysics\(\)\s*\{[^}]*fallY\s*=\s*profile\s*&&\s*profile\.pet\s*&&\s*height\s*>\s*0\s*\?\s*0\s*:\s*-1/s);
 });

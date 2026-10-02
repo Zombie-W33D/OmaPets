@@ -13,7 +13,7 @@ from scripts.omapets_data import (
 )
 
 MAX_PROFILES = 12
-MAX_PETS = 32
+MAX_PETS = 64
 MAX_PHRASE_BYTES = 4096
 MAX_PHRASES = 8
 MAX_PHRASE_CHARS = 100
