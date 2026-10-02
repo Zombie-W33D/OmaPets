@@ -396,13 +396,28 @@ PanelWindow {
     borderSpec: Border.localOrSurfaceSpec("popups", "border", Color.popups.border,
                                          Color.popups.border, Math.max(1, Style.space(2)))
 
-    Item {
+    Rectangle {
       id: cardHeader
       x: card.borderLeft
       y: card.borderTop
       width: Math.max(1, card.width - card.borderLeft - card.borderRight)
       height: headerRow.implicitHeight + Style.space(12)
+      radius: Math.max(0, card.radius - card.borderTop)
+      // A quiet tint of the themed active color, not the frame's border color.
+      color: Qt.rgba(
+        Color.popups.background.r * 0.76 + Color.bar.active.r * 0.24,
+        Color.popups.background.g * 0.76 + Color.bar.active.g * 0.24,
+        Color.popups.background.b * 0.76 + Color.bar.active.b * 0.24,
+        Color.popups.background.a)
 
+      Rectangle {
+        visible: cardBodySection.visible
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: parent.radius
+        color: parent.color
+      }
       Row {
         id: headerRow
         anchors.left: parent.left

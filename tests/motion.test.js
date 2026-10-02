@@ -311,6 +311,17 @@ test('the pet card uses the shell popup surface, typography and existing state t
   assert.match(windowSource, /root\.activity && root\.activity\.phrase \? root\.activity\.phrase : ""/);
 });
 
+test('the card header uses a themed active tint distinct from its popup frame', () => {
+  const header = windowSource.split('id: cardHeader')[1]?.split('id: headerRow')[0] || '';
+  assert.match(windowSource, /borderSpec: Border\.localOrSurfaceSpec\("popups", "border", Color\.popups\.border/);
+  assert.match(windowSource, /Rectangle \{\s*id: cardHeader/);
+  assert.match(header, /color: Qt\.rgba\(/);
+  assert.match(header, /Color\.bar\.active\.r/);
+  assert.match(header, /Color\.popups\.background\.r/);
+  assert.match(header, /anchors\.bottom: parent\.bottom/);
+  assert.doesNotMatch(header, /color: Color\.popups\.border/);
+});
+
 test('the bar menu uses a fitted scrolling popup and theme controls', () => {
   const barSource = fs.readFileSync(path.join(__dirname, '..', 'BarWidget.qml'), 'utf8');
   assert.match(barSource, /PopupCard \{/);
